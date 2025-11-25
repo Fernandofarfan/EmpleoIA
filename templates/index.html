@@ -1,0 +1,53 @@
+<!-- job_scraper_app/templates/index.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mt-4">
+    <div class="col-md-8 offset-md-2 text-center">
+        <div class="card shadow">
+            <div class="card-body">
+                <h1 class="display-4 mb-4">
+                    <i class="bi bi-robot text-primary"></i> Buscador de Empleos con IA
+                </h1>
+                <p class="lead">
+                    Una solución completa para buscar ofertas de trabajo en Indeed y LinkedIn,
+                    y conectar automáticamente con profesionales en empresas de interés.
+                </p>
+                <hr>
+                <div class="row mt-4">
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <i class="bi bi-search text-primary" style="font-size: 3rem;"></i>
+                                <h4 class="mt-3">Buscar Empleos</h4>
+                                <p>Buscar y recolectar ofertas de trabajo de Indeed y LinkedIn</p>
+                                <a href="/scraper" class="btn btn-primary">Comenzar Búsqueda</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <i class="bi bi-table text-success" style="font-size: 3rem;"></i>
+                                <h4 class="mt-3">Ver Resultados</h4>
+                                <p>Explorar y analizar ofertas de trabajo recolectadas</p>
+                                <a href="/results" class="btn btn-success">Ver Resultados</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <i class="bi bi-people text-danger" style="font-size: 3rem;"></i>
+                                <h4 class="mt-3">Hacer Networking</h4>
+                                <p>Conectar automáticamente con profesionales en empresas objetivo</p>
+                                <a href="/connections" class="btn btn-danger">Enviar Conexiones</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

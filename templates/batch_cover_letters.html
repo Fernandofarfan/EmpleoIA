@@ -1,0 +1,134 @@
+{% extends "base.html" %} {% block content %}
+<h2 class="mb-4">Generador de Cartas de Presentación</h2>
+
+<div class="alert alert-info">
+  <i class="bi bi-info-circle me-2"></i>
+  <strong>Generá cartas de presentación personalizadas para múltiples empleos</strong>
+  <br />
+  <small class="text-muted">
+    Seleccioná un archivo de empleos y crearemos cartas de presentación optimizadas usando Gemini Pro.
+    Asegurate de haber cargado tu currículum en la página de <a href="/profile" class="alert-link">Perfil</a> primero.
+  </small>
+</div>
+
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow">
+      <div class="card-header bg-success text-white">
+        <h4 class="mb-0">
+          <i class="bi bi-envelope-paper"></i> Seleccionar Archivo de Empleos
+        </h4>
+      </div>
+      <div class="card-body">
+        {% if job_files %}
+        <div class="mb-3">
+          <label for="job_file_select" class="form-label">Elegí un archivo de empleos:</label>
+          <select class="form-select" id="job_file_select">
+            <option value="">-- Seleccioná un archivo --</option>
+            {% for filename in job_files %}
+            <option value="{{ filename }}">{{ filename }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label for="num_jobs" class="form-label">Cantidad de cartas a generar (predeterminado: 5):</label>
+          <input type="number" class="form-control" id="num_jobs" value="5" min="1" max="10">
+        </div>
+
+        <button class="btn btn-success" id="start_generation">
+          <i class="bi bi-magic"></i> Generar Cartas de Presentación
+        </button>
+
+        <div id="generation_status" class="mt-4" style="display: none;">
+          <div class="progress mb-3">
+            <div id="generation_progress" class="progress-bar progress-bar-striped progress-bar-animated"
+              role="progressbar" style="width: 0%"></div>
+          </div>
+          <p id="generation_message" class="text-muted"></p>
+        </div>
+
+        <div id="generation_results" class="mt-4" style="display: none;">
+          <h5>Resultados:</h5>
+          <div id="results_list"></div>
+        </div>
+
+        {% else %}
+        <div class="alert alert-warning">
+          No hay archivos de empleos disponibles. Por favor, primero buscá empleos desde la página de <a
+            href="/scraper">Buscar Empleos</a>.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  document.getElementById('start_generation').addEventListener('click', function () {
+    const filename = document.getElementById('job_file_select').value;
+    const numJobs = parseInt(document.getElementById('num_jobs').value) || 5;
+
+    if (!filename) {
+      alert('Por favor seleccioná un archivo de empleos');
+      return;
+    }
+
+    const statusDiv = document.getElementById('generation_status');
+    const resultsDiv = document.getElementById('generation_results');
+    const progressBar = document.getElementById('generation_progress');
+    const messageEl = document.getElementById('generation_message');
+    const resultsList = document.getElementById('results_list');
+
+    statusDiv.style.display = 'block';
+    resultsDiv.style.display = 'none';
+    progressBar.style.width = '0%';
+    messageEl.textContent = 'Iniciando generación de cartas...';
+
+    fetch('/api/batch_cover_letters', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        filename: filename,
+        num_jobs: numJobs
+      })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          progressBar.style.width = '100%';
+          messageEl.textContent = `¡Completado! Generadas ${data.successful} de ${data.total} cartas.`;
+
+          let html = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>Título del Puesto</th><th>Empresa</th><th>Estado</th><th>Descargar</th></tr></thead><tbody>';
+
+          data.results.forEach(result => {
+            html += '<tr>';
+            html += `<td>${result.job_title}</td>`;
+            html += `<td>${result.company}</td>`;
+            html += `<td><span class="badge ${result.status === 'success' ? 'bg-success' : 'bg-danger'}">${result.status === 'success' ? 'éxito' : 'fallido'}</span></td>`;
+            if (result.filename) {
+              html += `<td><a href="/download_resume/${result.filename}" class="btn btn-sm btn-primary">Descargar</a></td>`;
+            } else {
+              html += `<td>${result.error || 'Fallido'}</td>`;
+            }
+            html += '</tr>';
+          });
+
+          html += '</tbody></table></div>';
+          resultsList.innerHTML = html;
+          resultsDiv.style.display = 'block';
+        } else {
+          alert('Error: ' + data.error);
+          messageEl.textContent = 'Error: ' + data.error;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('Error al generar cartas: ' + error.message);
+        messageEl.textContent = 'Error: ' + error.message;
+      });
+  });
+</script>
+{% endblock %}

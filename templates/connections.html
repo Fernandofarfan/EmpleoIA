@@ -1,0 +1,159 @@
+<!-- job_scraper_app/templates/connections.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Solicitudes de Conexión de LinkedIn</h2>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="bi bi-building"></i> Lista de Empresas</h4>
+            </div>
+            <div class="card-body">
+                {% if empresas %}
+                <div class="list-group">
+                    {% for company in empresas %}
+                    <div class="list-group-item">{{ company }}</div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    No se extrajeron empresas todavía. Usá el botón "Extraer Empresas" en la página de Resultados.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4 shadow">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="bi bi-people"></i> Solicitudes de Conexión</h4>
+            </div>
+            <div class="card-body">
+                <div class="job-status-container mb-3">
+                    <div id="connection-status-box">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span><strong>Estado:</strong> <span id="connection-status">Inactivo</span></span>
+                        </div>
+                        <div class="progress mb-2">
+                            <div id="connection-progress" class="progress-bar bg-danger" role="progressbar"
+                                style="width: 0%"></div>
+                        </div>
+                        <p id="connection-message" class="small text-muted"></p>
+                    </div>
+                </div>
+
+                <form id="connection-form" action="/start_connection_requests" method="post">
+                    <div class="mb-3">
+                        <label for="linkedin_token" class="form-label">Token de Autenticación de LinkedIn
+                            (li_at)</label>
+                        <input type="text" class="form-control" id="linkedin_token" name="linkedin_token" required>
+                        <div class="form-text">La cookie li_at de tu cuenta de LinkedIn</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="message_template" class="form-label">Plantilla de Mensaje de Conexión</label>
+                        <textarea class="form-control" id="message_template" name="message_template"
+                            rows="3">¡Hola! Vi que trabajás en {company}. Soy ingeniero de software y me interesa saber más sobre tu experiencia. ¡Me encantaría conectar!</textarea>
+                        <div class="form-text">Usá {company} como marcador para el nombre de la empresa</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Seleccionar Empresas</label>
+                        {% if empresas %}
+                        <div class="form-check-container" style="max-height: 200px; overflow-y: auto;">
+                            {% for company in empresas %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="company_selection"
+                                    value="{{ company }}" id="company_{{ loop.index }}" checked>
+                                <label class="form-check-label" for="company_{{ loop.index }}">
+                                    {{ company }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="alert alert-info">
+                            No se extrajeron empresas todavía. Usá el botón "Extraer Empresas" en la página de
+                            Resultados.
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <button type="submit" class="btn btn-danger" id="connection-submit-btn" {% if not empresas
+                        %}disabled{% endif %}>
+                        <i class="bi bi-send"></i> Iniciar Solicitudes de Conexión
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Start polling for status updates
+        pollConnectionStatus();
+    });
+
+    function pollConnectionStatus() {
+        fetch('/status')
+            .then(response => response.json())
+            .then(data => {
+                updateConnectionStatusUI(data.connection_requests);
+
+                // Poll again in 2 seconds
+                setTimeout(pollConnectionStatus, 2000);
+            })
+            .catch(error => {
+                console.error('Error al verificar estado:', error);
+                setTimeout(pollConnectionStatus, 5000);  // Try again after 5 seconds
+            });
+    }
+
+    function updateConnectionStatusUI(jobData) {
+        const statusElem = document.getElementById('connection-status');
+        const progressElem = document.getElementById('connection-progress');
+        const messageElem = document.getElementById('connection-message');
+
+        // Update status text and color
+        // Update status text and color
+        const statusTranslations = {
+            'idle': 'Inactivo',
+            'running': 'Ejecutando',
+            'completed': 'Completado',
+            'failed': 'Falló'
+        };
+        const statusText = statusTranslations[jobData.status] || jobData.status;
+
+        statusElem.textContent = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+        statusElem.className = '';
+
+        if (jobData.status === 'running') {
+            statusElem.classList.add('text-primary');
+            progressElem.classList.add('progress-bar-striped', 'progress-bar-animated');
+        } else if (jobData.status === 'completed') {
+            statusElem.classList.add('text-success');
+            progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
+        } else if (jobData.status === 'failed') {
+            statusElem.classList.add('text-danger');
+            progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
+        } else {
+            // Idle
+            statusElem.classList.add('text-muted');
+            progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
+        }
+
+        // Update progress bar
+        progressElem.style.width = `${jobData.progress}%`;
+        progressElem.setAttribute('aria-valuenow', jobData.progress);
+
+        // Update message
+        messageElem.textContent = jobData.message;
+    }
+</script>
+{% endblock %}

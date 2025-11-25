@@ -1,0 +1,253 @@
+<!-- job_scraper_app/templates/scraper.html -->
+{% extends "base.html" %}
+
+{% block content %}
+<h2 class="mb-4">Buscar Empleos</h2>
+
+<!-- Resume Upload Notice -->
+<div class="alert alert-info mb-4">
+  <div class="d-flex align-items-center">
+    <i class="bi bi-info-circle me-2"></i>
+    <div>
+      <strong>¡Antes de buscar empleos, cargá tu currículum para optimización con IA!</strong>
+      <br>
+      <small class="text-muted">Andá a la página de <a href="/profile" class="alert-link">Perfil</a> para cargar tu CV.
+        Esto habilita la optimización con IA para cada empleo que extraigas.</small>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <!-- Indeed Scraper -->
+  <div class="col-md-6">
+    <div class="card mb-4 shadow">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0"><i class="bi bi-briefcase"></i> Scraper de Indeed</h4>
+      </div>
+      <div class="card-body">
+        <div class="job-status-container mb-3">
+          <div id="indeed-status-box">
+            <div class="d-flex justify-content-between mb-2">
+              <span><strong>Estado:</strong> <span id="indeed-status">Inactivo</span></span>
+            </div>
+            <div class="progress mb-2">
+              <div id="indeed-progress" class="progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+            <p id="indeed-message" class="small text-muted"></p>
+          </div>
+        </div>
+
+        <form action="/start_indeed_scraper" method="post">
+          <div id="indeed-search-params">
+            <div class="search-row mb-3 p-3 border rounded bg-light position-relative">
+              <div class="mb-2">
+                <label class="form-label">Puesto / Palabras Clave</label>
+                <input type="text" class="form-control" name="position[]" placeholder="ej. Python Developer" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Ubicación</label>
+                <input type="text" class="form-control" name="location[]" placeholder="ej. Buenos Aires, Argentina">
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Páginas a Escanear</label>
+                <input type="number" class="form-control" name="pages" value="1" min="1" max="5">
+              </div>
+              <button type="button"
+                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 remove-search"
+                title="Eliminar búsqueda">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mb-3">
+            <button type="button" class="btn btn-outline-primary btn-sm" id="add-indeed-search">
+              <i class="bi bi-plus-circle"></i> Agregar Búsqueda
+            </button>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100">
+            <i class="bi bi-search"></i> Iniciar Scraper de Indeed
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- LinkedIn Scraper -->
+  <div class="col-md-6">
+    <div class="card mb-4 shadow">
+      <div class="card-header bg-info text-white">
+        <h4 class="mb-0"><i class="bi bi-linkedin"></i> Scraper de LinkedIn</h4>
+      </div>
+      <div class="card-body">
+        <div class="job-status-container mb-3">
+          <div id="linkedin-status-box">
+            <div class="d-flex justify-content-between mb-2">
+              <span><strong>Estado:</strong> <span id="linkedin-status">Inactivo</span></span>
+            </div>
+            <div class="progress mb-2">
+              <div id="linkedin-progress" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
+            </div>
+            <p id="linkedin-message" class="small text-muted"></p>
+          </div>
+        </div>
+
+        <form action="/start_linkedin_scraper" method="post">
+          <div id="linkedin-search-params">
+            <div class="search-row mb-3 p-3 border rounded bg-light position-relative">
+              <div class="mb-2">
+                <label class="form-label">Puesto / Palabras Clave</label>
+                <input type="text" class="form-control" name="position[]" placeholder="ej. Software Engineer" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Ubicación</label>
+                <input type="text" class="form-control" name="location[]" placeholder="ej. Argentina">
+              </div>
+              <button type="button"
+                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 remove-search"
+                title="Eliminar búsqueda">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mb-3">
+            <button type="button" class="btn btn-outline-info btn-sm" id="add-linkedin-search">
+              <i class="bi bi-plus-circle"></i> Agregar Búsqueda
+            </button>
+          </div>
+
+          <div class="mb-3">
+            <button type="button" class="btn btn-outline-secondary btn-sm w-100"
+              onclick="toggleFilters('linkedin-filters')" id="toggle-linkedin-filters">
+              Filtros Avanzados
+            </button>
+            <div id="linkedin-filters" class="mt-3 p-3 border rounded" style="display: none;">
+              <div class="mb-2">
+                <label class="form-label">Token de Autenticación de LinkedIn (li_at)</label>
+                <input type="text" class="form-control" name="linkedin_token">
+                <div class="form-text">La cookie li_at es necesaria para acceder a LinkedIn.</div>
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-info text-white w-100">
+            <i class="bi bi-linkedin"></i> Iniciar Scraper de LinkedIn
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // Add search row buttons
+    document.getElementById('add-indeed-search').addEventListener('click', function () {
+      addSearchRow('indeed-search-params');
+    });
+
+    document.getElementById('add-linkedin-search').addEventListener('click', function () {
+      addSearchRow('linkedin-search-params');
+    });
+
+    // Handle remove search buttons
+    document.addEventListener('click', function (e) {
+      if (e.target.closest('.remove-search')) {
+        const row = e.target.closest('.search-row');
+        if (row && row.parentElement.querySelectorAll('.search-row').length > 1) {
+          row.remove();
+        }
+      }
+    });
+
+    // Start polling for status updates
+    pollStatus();
+  });
+
+  function addSearchRow(containerId) {
+    const container = document.getElementById(containerId);
+    const newRow = container.querySelector('.search-row').cloneNode(true);
+
+    // Clear inputs
+    newRow.querySelectorAll('input').forEach(input => {
+      input.value = '';
+    });
+
+    container.appendChild(newRow);
+  }
+
+  function toggleFilters(filterId) {
+    const filterDiv = document.getElementById(filterId);
+    const buttonId = 'toggle-' + filterId;
+    const button = document.getElementById(buttonId);
+
+    if (filterDiv.style.display === 'none') {
+      filterDiv.style.display = 'block';
+      if (button) button.textContent = 'Ocultar Filtros';
+    } else {
+      filterDiv.style.display = 'none';
+      if (button) button.textContent = 'Filtros Avanzados';
+    }
+  }
+
+  function pollStatus() {
+    fetch('/status')
+      .then(response => response.json())
+      .then(data => {
+        updateStatusUI('indeed', data.indeed_scraping);
+        updateStatusUI('linkedin', data.linkedin_scraping);
+
+        // Poll again in 2 seconds
+        setTimeout(pollStatus, 2000);
+      })
+      .catch(error => {
+        console.error('Error polling status:', error);
+        setTimeout(pollStatus, 5000);  // Try again after 5 seconds
+      });
+  }
+
+  function updateStatusUI(prefix, jobData) {
+    const statusElem = document.getElementById(`${prefix}-status`);
+    const progressElem = document.getElementById(`${prefix}-progress`);
+    const messageElem = document.getElementById(`${prefix}-message`);
+
+    // Update status text and color
+    const statusTranslations = {
+      'idle': 'Inactivo',
+      'running': 'Ejecutando',
+      'completed': 'Completado',
+      'failed': 'Falló'
+    };
+    const statusText = statusTranslations[jobData.status] || jobData.status;
+
+    statusElem.textContent = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+    statusElem.className = '';
+
+    if (jobData.status === 'running') {
+      statusElem.classList.add('text-primary');
+      progressElem.classList.add('progress-bar-striped', 'progress-bar-animated');
+    } else if (jobData.status === 'completed') {
+      statusElem.classList.add('text-success');
+      progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    } else if (jobData.status === 'failed') {
+      statusElem.classList.add('text-danger');
+      progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    } else {
+      // Idle
+      statusElem.classList.add('text-muted');
+      progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    }
+
+    // Update progress bar
+    progressElem.style.width = `${jobData.progress}%`;
+    progressElem.setAttribute('aria-valuenow', jobData.progress);
+
+    // Update message
+    messageElem.textContent = jobData.message;
+  }
+</script>
+{% endblock %}

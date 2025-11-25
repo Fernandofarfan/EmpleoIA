@@ -1,0 +1,134 @@
+<!-- templates/view_profile.html -->
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2>Your Profile
+        {% if role_type %}
+        <span class="badge bg-info">{{ role_type.replace('_', ' ').title() }}</span>
+        {% endif %}
+      </h2>
+    </div>
+    <div>
+      <a href="/profile" class="btn btn-outline-primary me-2"><i class="bi bi-arrow-left"></i> Back to Profiles</a>
+      {% if role_type %}
+      <a href="/delete_profile/{{ role_type }}" class="btn btn-outline-danger">
+        <i class="bi bi-trash"></i> Eliminar Profile
+      </a>
+      {% else %}
+      <a href="/delete_profile" class="btn btn-outline-danger">
+        <i class="bi bi-trash"></i> Eliminar Profile
+      </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if resume_filename %}
+  <div class="alert alert-info">
+    <i class="bi bi-file-text"></i> Resume File:
+    <strong>{{ resume_filename }}</strong>
+  </div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0"><i class="bi bi-gear"></i> Technical Skills</h5>
+        </div>
+        <div class="card-body">
+          {% if profile.skills %}
+          <div class="row">
+            {% for skill in profile.skills %}
+            <div class="col-md-6 mb-2">
+              <span class="badge bg-light text-dark border">{{ skill }}</span>
+            </div>
+            {% endfor %}
+          </div>
+          <hr />
+          <small class="text-muted">Total: {{ profile.skills|length }} skills found</small>
+          {% else %}
+          <p class="text-muted">No technical skills detected in resume.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card shadow mb-4">
+        <div class="card-header bg-success text-white">
+          <h5 class="mb-0"><i class="bi bi-briefcase"></i> Experience</h5>
+        </div>
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <i class="bi bi-clock-history me-2 text-primary" style="font-size: 2rem"></i>
+            <div>
+              <h3 class="mb-0">{{ profile.experience_years }}</h3>
+              <small class="text-muted">Years of Experience</small>
+            </div>
+          </div>
+
+          {% if profile.experience_years > 0 %}
+          <div class="progress mb-2" style="height: 8px">
+            <div class="progress-bar bg-success" role="progressbar"
+              style="width: {{ (profile.experience_years / 10 * 100) | round }}%"
+              aria-valuenow="{{ profile.experience_years }}" aria-valuemin="0" aria-valuemax="10"></div>
+          </div>
+          <small class="text-muted">Experience Level: {% if profile.experience_years >= 7 %}Senior {%
+            elif profile.experience_years >= 3 %}Mid-level {% elif
+            profile.experience_years >= 1 %}Junior {% else %}Entry-level {%
+            endif %}
+          </small>
+          {% else %}
+          <p class="text-muted">No specific experience years detected.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="card shadow mb-4">
+        <div class="card-header bg-info text-white">
+          <h5 class="mb-0"><i class="bi bi-mortarboard"></i> Education</h5>
+        </div>
+        <div class="card-body">
+          {% if profile.education %} {% for edu in profile.education %}
+          <div class="mb-2"><i class="bi bi-dot"></i> {{ edu }}</div>
+          {% endfor %} {% else %}
+          <p class="text-muted">No education information detected.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow">
+        <div class="card-header bg-secondary text-white">
+          <h5 class="mb-0"><i class="bi bi-file-text"></i> Resume Preview</h5>
+        </div>
+        <div class="card-body">
+          <div class="bg-light p-3" style="max-height: 300px; overflow-y: auto">
+            <pre style="white-space: pre-wrap; font-size: 0.9rem">
+{{ profile.raw_text[:1000] }}{% if profile.raw_text|length > 1000 %}...{% endif %}</pre>
+          </div>
+          {% if profile.raw_text|length > 1000 %}
+          <small class="text-muted">Showing first 1000 characters. Full text is used for
+            matching.</small>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-4">
+    <div class="alert alert-success">
+      <h6><i class="bi bi-check-circle"></i> Ready for Job Matching!</h6>
+      <p class="mb-0">
+        Your profile has been successfully parsed. Go to the
+        <a href="/results" class="alert-link">Resultados</a> page to match your
+        profile with scraped jobs and get percentage match scores.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}
