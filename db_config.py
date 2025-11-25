@@ -3,6 +3,10 @@ from mysql.connector import pooling
 import os
 from datetime import datetime
 import logging
+from dotenv import load_dotenv
+
+# Cargar variables de entorno
+load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -12,7 +16,7 @@ class DatabaseManager:
         self.db_config = {
             'host': '127.0.0.1',
             'user': 'root',
-            'password': '2306',
+            'password': os.getenv('DB_PASSWORD', ''),
             'database': 'job_tracker',
             'pool_name': 'job_pool',
             'pool_size': 5

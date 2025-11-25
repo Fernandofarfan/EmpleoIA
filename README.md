@@ -167,14 +167,24 @@ python -m venv .venv
 # 3. Instalar dependencias
 pip install -r requirements.txt
 
-# 4. Configurar base de datos
+# 4. Instalar modelo de spaCy (IMPORTANTE)
+python -m spacy download en_core_web_sm
+
+# 5. Configurar base de datos MySQL
 mysql -u root -p < setup_database.sql
+# O ejecutar manualmente:
+# CREATE DATABASE job_tracker;
+# USE job_tracker;
+# (copiar y ejecutar el contenido de setup_database.sql)
 
-# 5. Configurar variables de entorno
+# 6. Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus credenciales
+# Editar .env con tus credenciales:
+# - GEMINI_API_KEY: Tu API key de Google Gemini
+# - DB_PASSWORD: Tu contraseña de MySQL
+# - (Opcional) Credenciales de Indeed y LinkedIn
 
-# 6. Ejecutar la aplicación
+# 7. Ejecutar la aplicación
 python app.py
 ```
 
@@ -286,38 +296,41 @@ EmpleoIA/
 
 ### Variables de Entorno (.env)
 
+Creá un archivo `.env` en la raíz del proyecto copiando `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Luego editá el archivo `.env` con tus credenciales:
+
 ```env
-# Google Gemini API
+# Google Gemini API (OBLIGATORIO)
 GEMINI_API_KEY=tu_api_key_aqui
 
-# MySQL Database
+# MySQL Database (OBLIGATORIO)
 DB_HOST=127.0.0.1
 DB_USER=root
-DB_PASSWORD=tu_password
+DB_PASSWORD=tu_password_mysql
 DB_NAME=job_tracker
 
 # Indeed Credentials (Opcional)
 INDEED_EMAIL=tu_email@example.com
 INDEED_PASSWORD=tu_password
 
-# LinkedIn Token (Temporal)
-LINKEDIN_LI_AT=tu_token_li_at
+# LinkedIn Token (Opcional)
+LINKEDIN_TOKEN=tu_token_li_at
 ```
 
-### Configuración de MySQL
+> [!IMPORTANT]
+> **Nunca subas el archivo `.env` al repositorio**. Este archivo contiene tus credenciales personales y está incluido en `.gitignore`.
 
-Editá `db_config.py` si necesitás cambiar las credenciales:
+### Obtener API Key de Gemini
 
-```python
-self.db_config = {
-    'host': '127.0.0.1',
-    'user': 'root',
-    'password': 'tu_password',
-    'database': 'job_tracker',
-    'pool_name': 'job_pool',
-    'pool_size': 5
-}
-```
+1. Andá a [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. Iniciá sesión con tu cuenta de Google
+3. Hacé clic en "Create API Key"
+4. Copiá la key y pegala en tu archivo `.env`
 
 ---
 
