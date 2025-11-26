@@ -25,6 +25,7 @@
                 <option value="data_engineer">⚙️ Data Engineer</option>
                 <option value="data_scientist">🔬 Data Scientist</option>
                 <option value="ai_engineer">🤖 AI/ML Engineer</option>
+                <option value="other">📄 Otros</option>
               </select>
               <div class="form-text">
                 Choose the role that matches this resume
@@ -168,6 +169,12 @@
                 Not uploaded
               </span>
             </div>
+            <div class="mb-2">
+              <strong>Otros:</strong>
+              <span id="status-other" class="badge bg-secondary float-end">
+                Not uploaded
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -218,6 +225,7 @@
       data_engineer: "⚙️",
       data_scientist: "🔬",
       ai_engineer: "🤖",
+      other: "📄",
     };
 
     const roleNames = {
@@ -225,6 +233,7 @@
       data_engineer: "Data Engineer",
       data_scientist: "Data Scientist",
       ai_engineer: "AI/ML Engineer",
+      other: "Otros",
     };
 
     tableBody.innerHTML = "";
@@ -272,6 +281,7 @@
       data_engineer: "status-engineer",
       data_scientist: "status-scientist",
       ai_engineer: "status-ai",
+      other: "status-other",
     };
 
     for (const [roleType, elementId] of Object.entries(roleKeys)) {
