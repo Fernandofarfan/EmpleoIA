@@ -1807,8 +1807,10 @@ class indeedScraper:
                     final_filename = f"indeed_jobs_{job_title.replace(' ', '_')}_{location.replace(' ', '_')}_{timestamp}.csv"
                     
                     df = pd.DataFrame(jobs)
-                    df.to_csv(final_filename, index=False)
-                    logger.info(f"Final results saved to {final_filename} with {len(jobs)} jobs")
+                    os.makedirs('results', exist_ok=True)
+                    file_path = os.path.join('results', final_filename)
+                    df.to_csv(file_path, index=False)
+                    logger.info(f"Final results saved to {file_path} with {len(jobs)} jobs")
                     
                 return jobs
 

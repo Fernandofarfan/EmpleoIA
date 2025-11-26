@@ -314,9 +314,10 @@ DB_USER=root
 DB_PASSWORD=tu_password_mysql
 DB_NAME=job_tracker
 
-# Indeed Credentials (Opcional)
-INDEED_EMAIL=tu_email@example.com
-INDEED_PASSWORD=tu_password
+# Indeed Scraper - Credenciales de Google (Opcional)
+# El scraper de Indeed usa autenticación de Google
+INDEED_EMAIL=tu_email_google@gmail.com
+INDEED_PASSWORD=tu_password_google
 
 # LinkedIn Token (Opcional)
 LINKEDIN_TOKEN=tu_token_li_at
@@ -324,6 +325,9 @@ LINKEDIN_TOKEN=tu_token_li_at
 
 > [!IMPORTANT]
 > **Nunca subas el archivo `.env` al repositorio**. Este archivo contiene tus credenciales personales y está incluido en `.gitignore`.
+
+> [!TIP]
+> **Verificación en 2 pasos (2FA) para Indeed**: Si tenés 2FA activada en tu cuenta de Google, deberás aprobar el inicio de sesión en tu celular cuando arranque el scraper. Alternativamente, podés crear una [contraseña de aplicación](https://support.google.com/accounts/answer/185833) en tu cuenta de Google.
 
 ### Obtener API Key de Gemini
 

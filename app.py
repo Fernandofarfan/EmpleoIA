@@ -10,7 +10,11 @@ import random
 import sys
 import json
 import mysql.connector
+from dotenv import load_dotenv
 from db_config import db_manager
+
+# Cargar variables de entorno desde .env
+load_dotenv()
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -186,22 +190,36 @@ def get_user_profile():
         return None
 
 def get_resume_text_from_profile():
-    user_profile = get_user_profile()
-    if not user_profile:
-        return None
-    
-    resume_filename = user_profile.get('resume_filename')
-    if not resume_filename:
-        return None
-    
-    resume_path = os.path.join('uploads', resume_filename)
-    if not os.path.exists(resume_path):
-        return None
-    
+    """Get resume text from any available profile (multi-resume system)"""
     try:
+        # Intentar cargar todos los perfiles
+        profile_path = os.path.join('profiles', 'user_profiles.json')
+        if not os.path.exists(profile_path):
+            return None
+        
+        with open(profile_path, 'r', encoding='utf-8') as f:
+            all_profiles = json.load(f)
+        
+        # Si no hay perfiles, retornar None
+        if not all_profiles:
+            return None
+        
+        # Tomar el primer perfil disponible (cualquier rol)
+        first_role = list(all_profiles.keys())[0]
+        user_profile = all_profiles[first_role]
+        
+        resume_filename = user_profile.get('resume_filename')
+        if not resume_filename:
+            return None
+        
+        resume_path = os.path.join('uploads', resume_filename)
+        if not os.path.exists(resume_path):
+            return None
+        
         return resume_parser.extract_text_from_file(resume_path)
+        
     except Exception as e:
-        logger.error(f"Error reading resume: {e}")
+        logger.error(f"Error reading resume from profile: {e}")
         return None
 
 def run_indeed_scraper_with_matching(credentials, searches, filters=None):
@@ -272,8 +290,11 @@ def run_indeed_scraper_with_matching(credentials, searches, filters=None):
                 job_status['indeed_scraping']['progress'] = int(search_progress_base + 30)
                 
             except Exception as e:
+                import traceback
+                error_trace = traceback.format_exc()
                 logger.error(f"Error during search: {e}")
-                job_status['indeed_scraping']['message'] = f"Error: {str(e)}"
+                logger.error(f"Full traceback:\n{error_trace}")
+                job_status['indeed_scraping']['message'] = f"Error: {str(e)[:100]}"
                 continue
         
             if all_jobs:
@@ -1050,8 +1071,17 @@ def extract_companies_from_file(filename):
 
 @app.route('/start_indeed_scraper', methods=['POST'])
 def start_indeed_scraper():
-    indeed_email = request.form.get('indeed_email')
-    indeed_password = request.form.get('indeed_password')
+    # Forzar recarga de .env para asegurar que tenemos las últimas credenciales
+    load_dotenv(override=True)
+    
+    env_email = os.getenv('INDEED_EMAIL')
+    env_password = os.getenv('INDEED_PASSWORD')
+    
+    logger.info(f"DEBUG: INDEED_EMAIL from env: {'Found' if env_email else 'Not Found'}")
+    logger.info(f"DEBUG: INDEED_PASSWORD from env: {'Found' if env_password else 'Not Found'}")
+    
+    indeed_email = request.form.get('indeed_email') or env_email
+    indeed_password = request.form.get('indeed_password') or env_password
     
     searches = []
     positions = request.form.getlist('position[]')
