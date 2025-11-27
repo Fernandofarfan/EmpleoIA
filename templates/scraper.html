@@ -17,6 +17,85 @@
   </div>
 </div>
 
+
+<!-- Universal Scraper - Search All Platforms -->
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card shadow border-warning">
+      <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <h3 class="mb-0"><i class="bi bi-globe2"></i> 🚀 Scraper Universal - Buscar en Todas las Plataformas</h3>
+        <small>Ejecuta Indeed, LinkedIn, Computrabajo y Bumeran simultáneamente</small>
+      </div>
+      <div class="card-body">
+        <div class="job-status-container mb-3">
+          <div id="universal-status-box">
+            <div class="d-flex justify-content-between mb-2">
+              <span><strong>Estado:</strong> <span id="universal-status">Inactivo</span></span>
+            </div>
+            <div class="progress mb-2" style="height: 25px;">
+              <div id="universal-progress" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 0%">0%</div>
+            </div>
+            <p id="universal-message" class="small text-muted"></p>
+            
+            <!-- Individual scraper status -->
+            <div class="row mt-3" id="universal-scrapers-status">
+              <div class="col-md-3 col-sm-6 mb-2">
+                <div class="card border-primary">
+                  <div class="card-body p-2 text-center">
+                    <small class="text-muted">Indeed</small>
+                    <div><span id="universal-indeed-status" class="badge bg-secondary">Esperando</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mb-2">
+                <div class="card border-info">
+                  <div class="card-body p-2 text-center">
+                    <small class="text-muted">LinkedIn</small>
+                    <div><span id="universal-linkedin-status" class="badge bg-secondary">Esperando</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mb-2">
+                <div class="card border-danger">
+                  <div class="card-body p-2 text-center">
+                    <small class="text-muted">Computrabajo</small>
+                    <div><span id="universal-computrabajo-status" class="badge bg-secondary">Esperando</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-3 col-sm-6 mb-2">
+                <div class="card border-success">
+                  <div class="card-body p-2 text-center">
+                    <small class="text-muted">Bumeran</small>
+                    <div><span id="universal-bumeran-status" class="badge bg-secondary">Esperando</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form action="/start_universal_scraper" method="post">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label"><strong>Puesto / Palabras Clave</strong></label>
+              <input type="text" class="form-control form-control-lg" name="position" placeholder="ej. Python Developer" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label"><strong>Ubicación</strong></label>
+              <input type="text" class="form-control form-control-lg" name="location" placeholder="ej. Buenos Aires, Argentina">
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-lg w-100 text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <i class="bi bi-rocket-takeoff"></i> Iniciar Búsqueda Universal
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="row">
   <!-- Indeed Scraper -->
   <div class="col-md-6">
@@ -317,6 +396,9 @@
         updateStatusUI('computrabajo', data.computrabajo_scraping);
         updateStatusUI('bumeran', data.bumeran_scraping);
 
+        updateUniversalStatusUI(data.universal_scraping);
+
+
         // Poll again in 2 seconds
         setTimeout(pollStatus, 2000);
       })
@@ -367,5 +449,77 @@
     // Update message
     messageElem.textContent = jobData.message;
   }
+
+
+  function updateUniversalStatusUI(jobData) {
+    if (!jobData) return;
+
+    const statusElem = document.getElementById('universal-status');
+    const progressElem = document.getElementById('universal-progress');
+    const messageElem = document.getElementById('universal-message');
+
+    if (!statusElem) return;
+
+    // Update status text and color
+    const statusTranslations = {
+      'idle': 'Inactivo',
+      'running': 'Ejecutando',
+      'completed': 'Completado',
+      'failed': 'Falló'
+    };
+    const statusText = statusTranslations[jobData.status] || jobData.status;
+
+    statusElem.textContent = statusText.charAt(0).toUpperCase() + statusText.slice(1);
+    statusElem.className = '';
+
+    if (jobData.status === 'running') {
+      statusElem.classList.add('text-primary');
+      progressElem.classList.add('progress-bar-striped', 'progress-bar-animated');
+    } else if (jobData.status === 'completed') {
+      statusElem.classList.add('text-success');
+      progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    } else if (jobData.status === 'failed') {
+      statusElem.classList.add('text-danger');
+      progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    } else {
+      statusElem.classList.add('text-muted');
+      progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
+    }
+
+    // Update progress bar
+    progressElem.style.width = `${jobData.progress}%`;
+    progressElem.setAttribute('aria-valuenow', jobData.progress);
+    progressElem.textContent = `${jobData.progress}%`;
+
+    // Update message
+    messageElem.textContent = jobData.message;
+
+    // Update individual scraper statuses
+    if (jobData.scrapers) {
+      for (const [name, scraperData] of Object.entries(jobData.scrapers)) {
+        const badgeElem = document.getElementById(`universal-${name}-status`);
+        if (badgeElem) {
+          badgeElem.className = 'badge';
+          if (scraperData.status === 'running') {
+            badgeElem.classList.add('bg-primary');
+            badgeElem.textContent = 'Ejecutando...';
+          } else if (scraperData.status === 'completed') {
+            badgeElem.classList.add('bg-success');
+            badgeElem.textContent = '✓ Completado';
+          } else if (scraperData.status === 'failed') {
+            badgeElem.classList.add('bg-danger');
+            badgeElem.textContent = '✗ Error';
+          } else if (scraperData.status === 'skipped') {
+            badgeElem.classList.add('bg-warning');
+            badgeElem.textContent = 'Omitido';
+          } else {
+            badgeElem.classList.add('bg-secondary');
+            badgeElem.textContent = 'Esperando';
+          }
+        }
+      }
+    }
+  }
+
 </script>
 {% endblock %}

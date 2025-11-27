@@ -8,11 +8,32 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ### Planeado
+- Mejoras en el UI de la página de scrapers
 - Soporte para Docker
 - Tests unitarios completos
 - CI/CD con GitHub Actions
-- Soporte multi-idioma completo
 - Dashboard de analytics
+
+## [1.2.0] - 2025-11-27
+
+### Added
+- ✨ **Scraper Universal**: Ejecuta Computrabajo y Bumeran simultáneamente
+- ✨ Consolidación de resultados en un solo CSV con columna "Fuente"
+- ✨ Seguimiento en tiempo real del estado de cada scraper
+- ✨ UI mejorada con badges de estado por plataforma
+- ✨ Configuración automática de credenciales desde `.env` para LinkedIn
+
+### Changed
+- 🔄 LinkedIn token ahora se lee automáticamente del `.env`
+- 🔄 Scraper Universal optimizado para solo Computrabajo y Bumeran
+
+### Removed
+- 🗑️ Eliminados scrapers de ZonaJobs y Jooble (problemas de compatibilidad)
+- 🗑️ Archivos temporales de desarrollo limpiados
+
+### Fixed
+- 🐛 Corrección de errores en la lectura de credenciales
+- 🐛 Mejoras en el manejo de errores del scraper universal
 
 ## [1.1.0] - 2025-11-26
 

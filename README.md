@@ -57,9 +57,10 @@
 
 ### 🔍 **Scraping Multi-Plataforma**
 - Búsqueda automatizada en **Indeed**, **LinkedIn**, **Bumeran** y **Computrabajo**
+- **🚀 Scraper Universal**: Ejecuta Computrabajo y Bumeran simultáneamente con un solo clic
 - Filtrado inteligente por habilidades, ubicación y nivel de experiencia
 - **Extracción Profunda**: Obtención de enlaces directos de postulación ("Apply URL")
-- Exportación a CSV para análisis posterior
+- Exportación a CSV consolidado para análisis posterior
 - Sistema anti-detección para scraping confiable
 
 ### 🤖 **Optimización de CVs con IA**

@@ -24,6 +24,7 @@ from scrapers.linkedin_connection import linkedinConnections
 from scrapers.computrabajo_scraper import ComputrabajoScraper
 from scrapers.bumeran_scraper import BumeranScraper
 
+
 from resume_parser import resumeParser, jobMatcher
 from job_precheck import extract_skills_from_text
 from simple_resume_optimizer import simpleResumeOptimizer
@@ -50,12 +51,17 @@ for folder in ['uploads', 'results', 'logs', 'profiles']:
 
 resume_parser = resumeParser()
 job_matcher = jobMatcher()
-
 job_status = {
     'indeed_scraping': {'status': 'idle', 'progress': 0, 'message': ''},
     'linkedin_scraping': {'status': 'idle', 'progress': 0, 'message': ''},
     'computrabajo_scraping': {'status': 'idle', 'progress': 0, 'message': ''},
     'bumeran_scraping': {'status': 'idle', 'progress': 0, 'message': ''},
+    'universal_scraping': {'status': 'idle', 'progress': 0, 'message': '', 'scrapers': {
+        'indeed': {'status': 'idle', 'progress': 0},
+        'linkedin': {'status': 'idle', 'progress': 0},
+        'computrabajo': {'status': 'idle', 'progress': 0},
+        'bumeran': {'status': 'idle', 'progress': 0}
+    }},
     'connection_requests': {'status': 'idle', 'progress': 0, 'message': ''}
 }
 
@@ -1138,6 +1144,10 @@ def start_indeed_scraper():
 def start_linkedin_scraper():
     linkedin_token = request.form.get('linkedin_token')
     
+    # If not provided in form, try to get from environment
+    if not linkedin_token:
+        linkedin_token = os.getenv('LINKEDIN_TOKEN')
+    
     searches = []
     positions = request.form.getlist('position[]')
     locations = request.form.getlist('location[]')
@@ -1347,6 +1357,173 @@ def start_bumeran_scraper():
     
     flash('Bumeran scraper started', 'success')
     return redirect(url_for('scraper'))
+
+
+
+@app.route('/start_universal_scraper', methods=['POST'])
+def start_universal_scraper():
+    """Start Universal Scraper - runs all 4 scrapers simultaneously"""
+    position = request.form.get('position')
+    location = request.form.get('location', '')
+    
+    if not position:
+        flash('Por favor proporciona un puesto para buscar', 'danger')
+        return redirect(url_for('scraper'))
+    
+    # Initialize universal scraper status
+    job_status['universal_scraping'] = {
+        'status': 'running',
+        'progress': 0,
+        'message': 'Iniciando búsqueda en Computrabajo y Bumeran...',
+        'scrapers': {
+            'indeed': {'status': 'idle', 'progress': 0},
+            'linkedin': {'status': 'idle', 'progress': 0},
+            'computrabajo': {'status': 'idle', 'progress': 0},
+            'bumeran': {'status': 'idle', 'progress': 0}
+        }
+    }
+    
+    def run_universal_scraper():
+        try:
+            all_results = []
+            completed_scrapers = 0
+            total_scrapers = 4
+            scraper_threads = []
+            scraper_results = {
+                'indeed': [],
+                'linkedin': [],
+                'computrabajo': [],
+                'bumeran': []
+            }
+            
+            # Get credentials from environment
+            indeed_email = os.getenv('INDEED_EMAIL')
+            indeed_password = os.getenv('INDEED_PASSWORD')
+            linkedin_token = os.getenv('LINKEDIN_TOKEN')
+            computrabajo_email = os.getenv('COMPUTRABAJO_EMAIL')
+            computrabajo_password = os.getenv('COMPUTRABAJO_PASSWORD')
+            bumeran_email = os.getenv('BUMERAN_EMAIL')
+            bumeran_password = os.getenv('BUMERAN_PASSWORD')
+            
+            # Function to run Indeed scraper
+            def run_indeed():
+                # Skipping Indeed in universal scraper - use individual scraper instead
+                logger.info("Skipping Indeed in universal scraper")
+                job_status['universal_scraping']['scrapers']['indeed']['status'] = 'skipped'
+                job_status['universal_scraping']['scrapers']['indeed']['message'] = 'Usar scraper individual'
+            
+            # Function to run LinkedIn scraper
+            def run_linkedin():
+                # Skipping LinkedIn in universal scraper - use individual scraper instead
+                logger.info("Skipping LinkedIn in universal scraper")
+                job_status['universal_scraping']['scrapers']['linkedin']['status'] = 'skipped'
+                job_status['universal_scraping']['scrapers']['linkedin']['message'] = 'Usar scraper individual'
+            
+            # Function to run Computrabajo scraper
+            def run_computrabajo():
+                try:
+                    job_status['universal_scraping']['scrapers']['computrabajo']['status'] = 'running'
+                    job_status['universal_scraping']['message'] = 'Buscando en Computrabajo...'
+                    
+                    scraper = ComputrabajoScraper()
+                    jobs = scraper.search_jobs(position, location, max_jobs=50, 
+                                              email=computrabajo_email, password=computrabajo_password)
+                    
+                    if jobs:
+                        for job in jobs:
+                            job['Fuente'] = 'Computrabajo'
+                        scraper_results['computrabajo'] = jobs
+                    
+                    scraper.close()
+                    job_status['universal_scraping']['scrapers']['computrabajo']['status'] = 'completed'
+                    job_status['universal_scraping']['scrapers']['computrabajo']['progress'] = 100
+                except Exception as e:
+                    logger.error(f"Error in Computrabajo scraper: {e}")
+                    job_status['universal_scraping']['scrapers']['computrabajo']['status'] = 'failed'
+            
+            # Function to run Bumeran scraper
+            def run_bumeran():
+                try:
+                    job_status['universal_scraping']['scrapers']['bumeran']['status'] = 'running'
+                    job_status['universal_scraping']['message'] = 'Buscando en Bumeran...'
+                    
+                    scraper = BumeranScraper()
+                    jobs = scraper.search_jobs(position, location, max_jobs=50,
+                                             email=bumeran_email, password=bumeran_password)
+                    
+                    if jobs:
+                        for job in jobs:
+                            job['Fuente'] = 'Bumeran'
+                        scraper_results['bumeran'] = jobs
+                    
+                    scraper.close()
+                    job_status['universal_scraping']['scrapers']['bumeran']['status'] = 'completed'
+                    job_status['universal_scraping']['scrapers']['bumeran']['progress'] = 100
+                except Exception as e:
+                    logger.error(f"Error in Bumeran scraper: {e}")
+                    job_status['universal_scraping']['scrapers']['bumeran']['status'] = 'failed'
+            
+            # Start all scrapers in parallel
+            indeed_thread = threading.Thread(target=run_indeed)
+            linkedin_thread = threading.Thread(target=run_linkedin)
+            computrabajo_thread = threading.Thread(target=run_computrabajo)
+            bumeran_thread = threading.Thread(target=run_bumeran)
+            
+            indeed_thread.start()
+            linkedin_thread.start()
+            computrabajo_thread.start()
+            bumeran_thread.start()
+            
+            # Wait for all to complete
+            indeed_thread.join()
+            linkedin_thread.join()
+            computrabajo_thread.join()
+            bumeran_thread.join()
+            
+            # Consolidate results
+            job_status['universal_scraping']['message'] = 'Consolidando resultados...'
+            job_status['universal_scraping']['progress'] = 90
+            
+            for source, jobs in scraper_results.items():
+                all_results.extend(jobs)
+            
+            if all_results:
+                # Create consolidated DataFrame
+                df = pd.DataFrame(all_results)
+                
+                # Reorder columns to have Fuente first
+                cols = df.columns.tolist()
+                if 'Fuente' in cols:
+                    cols.remove('Fuente')
+                    cols = ['Fuente'] + cols
+                    df = df[cols]
+                
+                # Save to CSV
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"universal_jobs_{timestamp}.csv"
+                filepath = os.path.join('results', filename)
+                df.to_csv(filepath, index=False, encoding='utf-8-sig')
+                
+                job_status['universal_scraping']['status'] = 'completed'
+                job_status['universal_scraping']['progress'] = 100
+                job_status['universal_scraping']['message'] = f'✅ Búsqueda completada: {len(all_results)} empleos encontrados en {len([s for s in scraper_results.values() if s])} plataformas'
+            else:
+                job_status['universal_scraping']['status'] = 'completed'
+                job_status['universal_scraping']['progress'] = 100
+                job_status['universal_scraping']['message'] = 'No se encontraron empleos'
+                
+        except Exception as e:
+            logger.error(f"Error in Universal scraper: {e}")
+            job_status['universal_scraping']['status'] = 'failed'
+            job_status['universal_scraping']['message'] = f'Error: {str(e)[:100]}'
+    
+    thread = threading.Thread(target=run_universal_scraper)
+    thread.daemon = True
+    thread.start()
+    
+    flash('Búsqueda universal iniciada en todas las plataformas', 'success')
+    return redirect(url_for('scraper'))
+
 
 
 @app.route('/start_connection_requests', methods=['POST'])
