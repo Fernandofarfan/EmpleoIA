@@ -21,6 +21,8 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from scrapers.indeed_scraper import indeedScraper
 from scrapers.linkedin_scraper import linkedinClass
 from scrapers.linkedin_connection import linkedinConnections
+from scrapers.computrabajo_scraper import ComputrabajoScraper
+from scrapers.bumeran_scraper import BumeranScraper
 
 from resume_parser import resumeParser, jobMatcher
 from job_precheck import extract_skills_from_text
@@ -52,6 +54,8 @@ job_matcher = jobMatcher()
 job_status = {
     'indeed_scraping': {'status': 'idle', 'progress': 0, 'message': ''},
     'linkedin_scraping': {'status': 'idle', 'progress': 0, 'message': ''},
+    'computrabajo_scraping': {'status': 'idle', 'progress': 0, 'message': ''},
+    'bumeran_scraping': {'status': 'idle', 'progress': 0, 'message': ''},
     'connection_requests': {'status': 'idle', 'progress': 0, 'message': ''}
 }
 
@@ -641,7 +645,8 @@ def view_file(filename):
                 df = df.sort_values('overall_match', ascending=False)
             
             # Select columns to display (excluding match scores)
-            display_columns = ['Title', 'Company', 'Location', 'Salary', 'Job_Link', 'Experience_Category']
+            # Select columns to display (excluding match scores)
+            display_columns = ['Title', 'Company', 'Location', 'Salary', 'Job_Link', 'URL', 'Apply_URL', 'Experience_Category']
             
             display_columns = [col for col in display_columns if col in df.columns]
             
@@ -1178,6 +1183,169 @@ def start_linkedin_scraper():
     thread.start()
     
     flash('LinkedIn scraper started', 'success')
+    return redirect(url_for('scraper'))
+
+
+
+@app.route('/start_computrabajo_scraper', methods=['POST'])
+def start_computrabajo_scraper():
+    """Start Computrabajo scraper"""
+    # Force reload of .env to ensure we have the latest credentials
+    load_dotenv(override=True)
+    
+    email = os.getenv('COMPUTRABAJO_EMAIL')
+    password = os.getenv('COMPUTRABAJO_PASSWORD')
+    
+    searches = []
+    positions = request.form.getlist('position[]')
+    locations = request.form.getlist('location[]')
+    
+    for i in range(len(positions)):
+        if positions[i]:
+            searches.append({
+                'position': positions[i],
+                'location': locations[i] if i < len(locations) else ''
+            })
+    
+    if not searches:
+        flash('Please provide at least one valid search', 'danger')
+        return redirect(url_for('scraper'))
+    
+    job_status['computrabajo_scraping'] = {
+        'status': 'running', 
+        'progress': 0, 
+        'message': 'Starting Computrabajo scraper...'
+    }
+    
+    def run_computrabajo_scraper():
+        try:
+            scraper = ComputrabajoScraper()
+            all_jobs = []
+            
+            for i, search in enumerate(searches):
+                position = search.get('position')
+                location = search.get('location', '')
+                
+                job_status['computrabajo_scraping']['progress'] = int((i / len(searches)) * 80)
+                job_status['computrabajo_scraping']['message'] = f"Searching for {position}..."
+                
+                # Pass credentials to search_jobs
+                jobs = scraper.search_jobs(position, location, max_jobs=50, email=email, password=password)
+                
+                if jobs:
+                    all_jobs.extend(jobs)
+                    job_status['computrabajo_scraping']['message'] = f"Found {len(jobs)} jobs for {position}"
+                
+                time.sleep(random.uniform(2, 4))
+            
+            if all_jobs:
+                job_status['computrabajo_scraping']['progress'] = 90
+                job_status['computrabajo_scraping']['message'] = 'Saving results...'
+                
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"computrabajo_jobs_{timestamp}.csv"
+                scraper.save_to_csv(all_jobs, filename)
+                
+                job_status['computrabajo_scraping']['status'] = 'completed'
+                job_status['computrabajo_scraping']['progress'] = 100
+                job_status['computrabajo_scraping']['message'] = f'Saved {len(all_jobs)} jobs'
+            else:
+                job_status['computrabajo_scraping']['status'] = 'completed'
+                job_status['computrabajo_scraping']['progress'] = 100
+                job_status['computrabajo_scraping']['message'] = 'No jobs found'
+            
+            scraper.close()
+            
+        except Exception as e:
+            logger.error(f"Error in Computrabajo scraper: {e}")
+            job_status['computrabajo_scraping']['status'] = 'failed'
+            job_status['computrabajo_scraping']['message'] = f'Error: {str(e)[:100]}'
+    
+    thread = threading.Thread(target=run_computrabajo_scraper)
+    thread.daemon = True
+    thread.start()
+    
+    flash('Computrabajo scraper started', 'success')
+    return redirect(url_for('scraper'))
+
+
+@app.route('/start_bumeran_scraper', methods=['POST'])
+def start_bumeran_scraper():
+    """Start Bumeran scraper"""
+    searches = []
+    positions = request.form.getlist('position[]')
+    locations = request.form.getlist('location[]')
+    
+    for i in range(len(positions)):
+        if positions[i]:
+            searches.append({
+                'position': positions[i],
+                'location': locations[i] if i < len(locations) else ''
+            })
+    
+    if not searches:
+        flash('Please provide at least one valid search', 'danger')
+        return redirect(url_for('scraper'))
+    
+    job_status['bumeran_scraping'] = {
+        'status': 'running', 
+        'progress': 0, 
+        'message': 'Starting Bumeran scraper...'
+    }
+    
+    def run_bumeran_scraper():
+        try:
+            # Get credentials
+            email = os.getenv('BUMERAN_EMAIL')
+            password = os.getenv('BUMERAN_PASSWORD')
+            
+            scraper = BumeranScraper()
+            all_jobs = []
+            
+            for i, search in enumerate(searches):
+                position = search.get('position')
+                location = search.get('location', '')
+                
+                job_status['bumeran_scraping']['progress'] = int((i / len(searches)) * 80)
+                job_status['bumeran_scraping']['message'] = f"Searching for {position}..."
+                
+                # Pass credentials to search_jobs
+                jobs = scraper.search_jobs(position, location, max_jobs=50, email=email, password=password)
+                
+                if jobs:
+                    all_jobs.extend(jobs)
+                    job_status['bumeran_scraping']['message'] = f"Found {len(jobs)} jobs for {position}"
+                
+                time.sleep(random.uniform(2, 4))
+            
+            if all_jobs:
+                job_status['bumeran_scraping']['progress'] = 90
+                job_status['bumeran_scraping']['message'] = 'Saving results...'
+                
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                filename = f"bumeran_jobs_{timestamp}.csv"
+                scraper.save_to_csv(all_jobs, filename)
+                
+                job_status['bumeran_scraping']['status'] = 'completed'
+                job_status['bumeran_scraping']['progress'] = 100
+                job_status['bumeran_scraping']['message'] = f'Saved {len(all_jobs)} jobs'
+            else:
+                job_status['bumeran_scraping']['status'] = 'completed'
+                job_status['bumeran_scraping']['progress'] = 100
+                job_status['bumeran_scraping']['message'] = 'No jobs found'
+            
+            scraper.close()
+            
+        except Exception as e:
+            logger.error(f"Error in Bumeran scraper: {e}")
+            job_status['bumeran_scraping']['status'] = 'failed'
+            job_status['bumeran_scraping']['message'] = f'Error: {str(e)[:100]}'
+    
+    thread = threading.Thread(target=run_bumeran_scraper)
+    thread.daemon = True
+    thread.start()
+    
+    flash('Bumeran scraper started', 'success')
     return redirect(url_for('scraper'))
 
 

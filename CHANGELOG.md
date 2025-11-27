@@ -14,6 +14,20 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - Soporte multi-idioma completo
 - Dashboard de analytics
 
+## [1.1.0] - 2025-11-26
+
+### Added
+- ✨ Soporte completo para **Bumeran** y **Computrabajo**
+- ✨ Sistema de **Login Automático** para portales de empleo
+- ✨ **Deep Scraping**: Extracción de enlaces directos de postulación ("Apply URL")
+- ✨ Nuevo botón "Apply" en la interfaz de resultados
+- ✨ Mejoras en la organización de archivos CSV exportados
+
+### Fixed
+- 🐛 Corrección de selectores CSS para Bumeran
+- 🐛 Solución a problemas de carga dinámica con React
+- 🐛 Manejo de errores 403 en login de Computrabajo
+
 ## [1.0.0] - 2025-01-25
 
 ### Added

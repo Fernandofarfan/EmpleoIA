@@ -88,20 +88,20 @@ Agregá cualquier otro contexto o screenshots sobre el feature request.
 
 ```python
 def scrape_jobs(platform: str, query: str, location: str) -> list:
-    \"\"\"
+    """
     Scrape job listings from specified platform.
     
     Args:
-        platform: Job platform name ('indeed' or 'linkedin')
+        platform: Job platform name ('indeed', 'linkedin', 'bumeran', or 'computrabajo')
         query: Job search query
         location: Job location
         
     Returns:
-        List of job dictionaries
+        List of job dictionaries with 'Apply_URL' for direct applications
         
     Raises:
         ValueError: If platform is not supported
-    \"\"\"
+    """
     # Implementation here
     pass
 ```
@@ -128,7 +128,7 @@ def scrape_jobs(platform: str, query: str, location: str) -> list:
 **Ejemplos:**
 
 ```
-Add: LinkedIn scraper with anti-detection
+Add: Bumeran and Computrabajo scrapers with login support
 Fix: MySQL connection pool exhaustion
 Update: Gemini API to use latest model
 Docs: Improve installation instructions

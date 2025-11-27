@@ -140,6 +140,112 @@
     </div>
   </div>
 </div>
+
+<div class="row">
+  <!-- Computrabajo Scraper -->
+  <div class="col-md-6">
+    <div class="card mb-4 shadow">
+      <div class="card-header bg-danger text-white">
+        <h4 class="mb-0"><i class="bi bi-briefcase-fill"></i> Scraper de Computrabajo</h4>
+      </div>
+      <div class="card-body">
+        <div class="job-status-container mb-3">
+          <div id="computrabajo-status-box">
+            <div class="d-flex justify-content-between mb-2">
+              <span><strong>Estado:</strong> <span id="computrabajo-status">Inactivo</span></span>
+            </div>
+            <div class="progress mb-2">
+              <div id="computrabajo-progress" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
+            </div>
+            <p id="computrabajo-message" class="small text-muted"></p>
+          </div>
+        </div>
+
+        <form action="/start_computrabajo_scraper" method="post">
+          <div id="computrabajo-search-params">
+            <div class="search-row mb-3 p-3 border rounded bg-light position-relative">
+              <div class="mb-2">
+                <label class="form-label">Puesto / Palabras Clave</label>
+                <input type="text" class="form-control" name="position[]" placeholder="ej. Python Developer" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Ubicación</label>
+                <input type="text" class="form-control" name="location[]" placeholder="ej. Buenos Aires">
+              </div>
+              <button type="button"
+                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 remove-search"
+                title="Eliminar búsqueda">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mb-3">
+            <button type="button" class="btn btn-outline-danger btn-sm" id="add-computrabajo-search">
+              <i class="bi bi-plus-circle"></i> Agregar Búsqueda
+            </button>
+          </div>
+
+          <button type="submit" class="btn btn-danger w-100">
+            <i class="bi bi-search"></i> Iniciar Scraper de Computrabajo
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bumeran Scraper -->
+  <div class="col-md-6">
+    <div class="card mb-4 shadow">
+      <div class="card-header bg-success text-white">
+        <h4 class="mb-0"><i class="bi bi-building"></i> Scraper de Bumeran</h4>
+      </div>
+      <div class="card-body">
+        <div class="job-status-container mb-3">
+          <div id="bumeran-status-box">
+            <div class="d-flex justify-content-between mb-2">
+              <span><strong>Estado:</strong> <span id="bumeran-status">Inactivo</span></span>
+            </div>
+            <div class="progress mb-2">
+              <div id="bumeran-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+            </div>
+            <p id="bumeran-message" class="small text-muted"></p>
+          </div>
+        </div>
+
+        <form action="/start_bumeran_scraper" method="post">
+          <div id="bumeran-search-params">
+            <div class="search-row mb-3 p-3 border rounded bg-light position-relative">
+              <div class="mb-2">
+                <label class="form-label">Puesto / Palabras Clave</label>
+                <input type="text" class="form-control" name="position[]" placeholder="ej. Data Analyst" required>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Ubicación</label>
+                <input type="text" class="form-control" name="location[]" placeholder="ej. Córdoba">
+              </div>
+              <button type="button"
+                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 remove-search"
+                title="Eliminar búsqueda">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between mb-3">
+            <button type="button" class="btn btn-outline-success btn-sm" id="add-bumeran-search">
+              <i class="bi bi-plus-circle"></i> Agregar Búsqueda
+            </button>
+          </div>
+
+          <button type="submit" class="btn btn-success w-100">
+            <i class="bi bi-search"></i> Iniciar Scraper de Bumeran
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -152,6 +258,14 @@
 
     document.getElementById('add-linkedin-search').addEventListener('click', function () {
       addSearchRow('linkedin-search-params');
+    });
+
+    document.getElementById('add-computrabajo-search').addEventListener('click', function () {
+      addSearchRow('computrabajo-search-params');
+    });
+
+    document.getElementById('add-bumeran-search').addEventListener('click', function () {
+      addSearchRow('bumeran-search-params');
     });
 
     // Handle remove search buttons
@@ -200,6 +314,8 @@
       .then(data => {
         updateStatusUI('indeed', data.indeed_scraping);
         updateStatusUI('linkedin', data.linkedin_scraping);
+        updateStatusUI('computrabajo', data.computrabajo_scraping);
+        updateStatusUI('bumeran', data.bumeran_scraping);
 
         // Poll again in 2 seconds
         setTimeout(pollStatus, 2000);
@@ -214,6 +330,8 @@
     const statusElem = document.getElementById(`${prefix}-status`);
     const progressElem = document.getElementById(`${prefix}-progress`);
     const messageElem = document.getElementById(`${prefix}-message`);
+
+    if (!statusElem || !jobData) return;
 
     // Update status text and color
     const statusTranslations = {

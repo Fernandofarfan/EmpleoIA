@@ -56,8 +56,9 @@
 ## ✨ Características
 
 ### 🔍 **Scraping Multi-Plataforma**
-- Búsqueda automatizada en **Indeed** y **LinkedIn**
+- Búsqueda automatizada en **Indeed**, **LinkedIn**, **Bumeran** y **Computrabajo**
 - Filtrado inteligente por habilidades, ubicación y nivel de experiencia
+- **Extracción Profunda**: Obtención de enlaces directos de postulación ("Apply URL")
 - Exportación a CSV para análisis posterior
 - Sistema anti-detección para scraping confiable
 
@@ -321,6 +322,12 @@ INDEED_PASSWORD=tu_password_google
 
 # LinkedIn Token (Opcional)
 LINKEDIN_TOKEN=tu_token_li_at
+
+# Bumeran & Computrabajo (Opcional - Para extracción profunda)
+BUMERAN_EMAIL=tu_email@ejemplo.com
+BUMERAN_PASSWORD=tu_password
+COMPUTRABAJO_EMAIL=tu_email@ejemplo.com
+COMPUTRABAJO_PASSWORD=tu_password
 ```
 
 > [!IMPORTANT]
