@@ -61,7 +61,13 @@
 - Filtrado inteligente por habilidades, ubicación y nivel de experiencia
 - **Extracción Profunda**: Obtención de enlaces directos de postulación ("Apply URL")
 - Exportación a CSV consolidado para análisis posterior
+- Exportación a CSV consolidado para análisis posterior
 - Sistema anti-detección para scraping confiable
+
+### 🎨 **Experiencia de Usuario (v2.0)**
+- **🌙 Dark Mode**: Tema oscuro nativo para reducir fatiga visual
+- **⚡ Filtros Dinámicos**: Búsqueda instantánea en resultados
+- **📱 Diseño Responsive**: Interfaz moderna adaptada a todos los dispositivos
 
 ### 🤖 **Optimización de CVs con IA**
 - Generación de currículums adaptados usando **Google Gemini Pro**
@@ -279,11 +285,7 @@ EmpleoIA/
 │
 ├── 📄 app.py                 # Aplicación principal Flask
 ├── 📄 db_config.py           # Configuración de MySQL
-├── 📄 resume_parser.py       # Parser de CVs
-├── 📄 simple_resume_optimizer.py # Optimizador con IA
-├── 📄 job_precheck.py        # Filtrado inteligente
-├── 📄 cover_letter_generator.py # Generador de cartas
-├── 📄 MASTER_RESUME_PROMPT.py # Prompts para Gemini
+├── 📄 resume_parser.py       # Parser de CVs con IA
 │
 ├── 📄 requirements.txt       # Dependencias Python
 ├── 📄 setup_database.sql     # Script de BD
@@ -387,6 +389,38 @@ chmod 755 results/
 # Verificar logs
 tail -f logs/app.log
 ```
+
+---
+
+## 🚀 Future Enhancements
+
+### 🔴 En Desarrollo Activo
+- **Sistema de Notificaciones**: Alertas por email cuando aparecen nuevos trabajos relevantes
+- **Tests Unitarios**: Cobertura completa de tests para mayor estabilidad
+- **CI/CD Pipeline**: Automatización de despliegues con GitHub Actions
+- **Docker Support**: Containerización completa para fácil deployment
+
+### 🟡 Próximas Funcionalidades
+- **Más Plataformas**: Glassdoor, ZipRecruiter, Monster, CareerBuilder
+- **Dashboard de Analytics**: Estadísticas de mercado laboral, tendencias salariales, demanda de skills
+- **Modo Offline**: Acceso a búsquedas guardadas sin conexión
+- **Exportación Avanzada**: PDF y Excel con formato profesional
+- **Filtros Avanzados**: Rango salarial, tipo de contrato, modalidad remota/híbrida
+- **Gráficos y Visualizaciones**: Charts interactivos para análisis de tendencias
+
+### 🟢 Ideas a Largo Plazo
+- **IA Avanzada**: Predicción de probabilidad de conseguir entrevista con ML
+- **Recomendación de Skills**: Sugerir habilidades para aprender basado en el mercado
+- **Mobile App**: Aplicación nativa para iOS y Android
+- **API REST Pública**: Permitir integraciones de terceros
+- **Gamificación**: Sistema de logros y estadísticas personales
+- **Integración con Calendarios**: Sincronizar entrevistas con Google Calendar/Outlook
+- **Multiidioma**: Soporte completo para inglés y portugués
+
+### 💡 Contribuciones Bienvenidas
+¿Tenés una idea para mejorar EmpleoIA? ¡Abrí un [issue](https://github.com/Fernandofarfan/EmpleoIA/issues) o enviá un PR!
+
+Ver [CONTRIBUTING.md](CONTRIBUTING.md) para el roadmap completo y áreas de contribución prioritarias.
 
 ---
 

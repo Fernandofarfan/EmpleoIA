@@ -8,11 +8,54 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [Unreleased]
 
 ### Planeado
-- Mejoras en el UI de la página de scrapers
-- Soporte para Docker
+- Sistema de notificaciones por email
+- Integración con más plataformas (Glassdoor, ZipRecruiter)
 - Tests unitarios completos
 - CI/CD con GitHub Actions
-- Dashboard de analytics
+- Dashboard de analytics avanzado
+- Modo offline para búsquedas guardadas
+- Exportación de datos a PDF/Excel
+
+## [2.1.0] - 2025-11-28
+
+### Added
+- ✨ **Super Botón de Acción**: Botón unificado "Postular y Seguir" que combina postulación, seguimiento y marcado como aplicado en un solo clic
+- ✨ **Networking UI Premium**: Rediseño completo de la página de conexiones de LinkedIn con estilo moderno
+- ✨ **Parsing de CV con IA**: Integración de Gemini AI para extraer automáticamente experiencia, habilidades y educación de CVs
+- ✨ **Scraper Universal Mejorado**: Opción "Otros" que ejecuta Computrabajo y Bumeran simultáneamente con seguimiento en tiempo real
+- 🎨 **CSS Premium**: Nuevos archivos CSS dedicados para cada página (index, scraper, results, tracker, connections, view_file)
+
+### Changed
+- 🔄 **Estructura de Proyecto**: Limpieza de archivos no utilizados (8 archivos eliminados)
+- 🔄 **README Actualizado**: Estructura de proyecto simplificada y más clara
+- 🔄 **Imports Optimizados**: Removidos imports no utilizados de `app.py`
+
+### Fixed
+- 🐛 **Indeed Scraper**: Restaurado y corregido con módulo stub `job_precheck.py` para compatibilidad
+- 🐛 **LinkedIn Scraper**: Restaurado desde git para mantener estabilidad
+- 🐛 **Compatibilidad**: Creado módulo stub para mantener scrapers funcionando sin dependencias obsoletas
+
+### Removed
+- 🗑️ **Archivos Obsoletos**: Eliminados `custom.css`, `.env.backup`, `debug_resume_parser.py`, `list_models.py`
+- 🗑️ **Módulos No Utilizados**: Removidos `simple_resume_optimizer.py`, `cover_letter_generator.py`, `MASTER_RESUME_PROMPT.py`
+- 🗑️ **Funcionalidad de Match con IA**: Removida por limitaciones de rate limiting de la API gratuita de Gemini
+
+## [2.0.0] - 2025-11-27
+
+### Added
+- ✨ **Dark Mode**: Tema oscuro completo con persistencia y toggle en barra de navegación
+- ✨ **Filtros Dinámicos**: Búsqueda instantánea en tablas de resultados sin recarga
+- ✨ **UI v2.0**: Rediseño completo de la interfaz con estilo moderno y consistente
+- ✨ **Feedback Visual**: Nuevas animaciones, badges de estado y barras de progreso
+
+### Fixed
+- 🐛 **Base de Datos**: Optimización del pool de conexiones para evitar errores de "Too many connections"
+- 🐛 **Estabilidad**: Corrección de estructura HTML base y scripts de carga
+- 🐛 **Estilos**: Restauración y blindaje de archivos CSS críticos
+
+### Changed
+- 🔄 **Navegación**: Menú superior reorganizado y responsive
+- 🔄 **Tablas**: Diseño más limpio y legible con acciones agrupadas
 
 ## [1.2.0] - 2025-11-27
 

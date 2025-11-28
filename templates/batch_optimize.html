@@ -1,133 +1,199 @@
-{% extends "base.html" %} {% block content %}
-<h2 class="mb-4">Optimización de Currículums por Lotes</h2>
-
-<div class="alert alert-info">
-  <i class="bi bi-info-circle me-2"></i>
-  <strong>Generá currículums optimizados para múltiples empleos</strong>
-  <br />
-  <small class="text-muted">
-    Seleccioná un archivo de empleos y crearemos currículums optimizados para los primeros 5 empleos usando Gemini Pro.
-    Asegurate de haber cargado tu currículum en la página de <a href="/profile" class="alert-link">Perfil</a> primero.
-  </small>
+<!-- templates/batch_optimize.html -->
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold text-dark mb-1">Optimización de CVs con IA</h2>
+    <p class="text-muted mb-0">Adapta tu currículum automáticamente para cada oferta laboral</p>
+  </div>
+  <a href="/profile" class="btn btn-outline-primary">
+    <i class="bi bi-person-badge me-2"></i> Gestionar mis CVs
+  </a>
 </div>
 
-<div class="row mb-4">
-  <div class="col-12">
-    <div class="card shadow">
-      <div class="card-header bg-success text-white">
-        <h4 class="mb-0">
-          <i class="bi bi-file-earmark-spreadsheet"></i> Seleccionar Archivo de Empleos
-        </h4>
+<div class="row g-4">
+  <!-- Configuration Column -->
+  <div class="col-lg-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+        <h5 class="fw-bold mb-0"><i class="bi bi-sliders me-2 text-primary"></i> Configuración</h5>
       </div>
-      <div class="card-body">
+      <div class="card-body p-4">
         {% if job_files %}
-        <div class="mb-3">
-          <label for="job_file_select" class="form-label">Elegí un archivo de empleos:</label>
+        <div class="mb-4">
+          <label for="job_file_select" class="form-label small fw-bold text-muted">1. Archivo de Origen</label>
           <select class="form-select" id="job_file_select">
-            <option value="">-- Seleccioná un archivo --</option>
+            <option value="">-- Seleccionar archivo CSV --</option>
             {% for filename in job_files %}
             <option value="{{ filename }}">{{ filename }}</option>
             {% endfor %}
           </select>
+          <div class="form-text small">El archivo debe contener columnas 'Title' y 'Description'.</div>
         </div>
-        
-        <div class="mb-3">
-          <label for="num_jobs" class="form-label">Cantidad de empleos a optimizar (predeterminado: 5):</label>
-          <input type="number" class="form-control" id="num_jobs" value="5" min="1" max="10">
-        </div>
-        
-        <button class="btn btn-success" id="start_optimization">
-          <i class="bi bi-magic"></i> Generar Currículums Optimizados
-        </button>
-        
-        <div id="optimization_status" class="mt-4" style="display: none;">
-          <div class="progress mb-3">
-            <div id="optimization_progress" class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+
+        <div class="mb-4">
+          <label for="num_jobs" class="form-label small fw-bold text-muted">2. Cantidad a Optimizar</label>
+          <div class="input-group">
+            <span class="input-group-text bg-light border-end-0"><i class="bi bi-hash"></i></span>
+            <input type="number" class="form-control border-start-0" id="num_jobs" value="5" min="1" max="10">
           </div>
-          <p id="optimization_message" class="text-muted"></p>
+          <div class="form-text small">Se procesarán los primeros N empleos del archivo.</div>
         </div>
-        
-        <div id="optimization_results" class="mt-4" style="display: none;">
-          <h5>Resultados:</h5>
-          <div id="results_list"></div>
+
+        <div class="d-grid">
+          <button class="btn btn-primary py-2" id="start_optimization">
+            <i class="bi bi-magic me-2"></i> Optimizar CVs
+          </button>
         </div>
-        
         {% else %}
-        <div class="alert alert-warning">
-          No hay archivos de empleos disponibles. Por favor, primero buscá empleos desde la página de <a href="/scraper">Buscar Empleos</a>.
+        <div class="alert alert-warning mb-0">
+          <i class="bi bi-exclamation-triangle me-2"></i> No hay archivos disponibles.
+          <a href="/scraper" class="alert-link">Ir al Scraper</a> para buscar empleos primero.
         </div>
         {% endif %}
       </div>
     </div>
   </div>
+
+  <!-- Results Column -->
+  <div class="col-lg-8">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0"><i class="bi bi-list-check me-2 text-success"></i> Resultados</h5>
+        <span id="status-badge" class="badge bg-light text-muted border">Esperando inicio...</span>
+      </div>
+      <div class="card-body p-4">
+        <!-- Progress Section -->
+        <div id="optimization_status" style="display: none;">
+          <div class="mb-2 d-flex justify-content-between small">
+            <span id="optimization_message" class="text-muted">Iniciando...</span>
+            <span id="progress-percentage" class="fw-bold text-primary">0%</span>
+          </div>
+          <div class="progress mb-4" style="height: 8px;">
+            <div id="optimization_progress" class="progress-bar progress-bar-striped progress-bar-animated"
+              role="progressbar" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Results List -->
+        <div id="optimization_results" style="display: none;">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="bg-light">
+                <tr>
+                  <th class="ps-3 py-3 text-muted text-uppercase small fw-bold">Puesto</th>
+                  <th class="py-3 text-muted text-uppercase small fw-bold">Empresa</th>
+                  <th class="py-3 text-muted text-uppercase small fw-bold text-center">Estado</th>
+                  <th class="pe-3 py-3 text-muted text-uppercase small fw-bold text-end">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="results_list">
+                <!-- Results injected here -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="text-center py-5">
+          <div class="mb-3 text-muted opacity-25">
+            <i class="bi bi-file-earmark-person" style="font-size: 3rem;"></i>
+          </div>
+          <p class="text-muted small">Los resultados aparecerán aquí una vez inicie el proceso.</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
 </div>
-{% endblock %} {% block scripts %}
+{% endblock %}
+
+{% block scripts %}
 <script>
-  document.getElementById('start_optimization').addEventListener('click', function() {
+  document.getElementById('start_optimization').addEventListener('click', function () {
     const filename = document.getElementById('job_file_select').value;
     const numJobs = parseInt(document.getElementById('num_jobs').value) || 5;
-    
+    const btn = this;
+
     if (!filename) {
       alert('Por favor seleccioná un archivo de empleos');
       return;
     }
-    
+
+    // UI Updates
     const statusDiv = document.getElementById('optimization_status');
     const resultsDiv = document.getElementById('optimization_results');
+    const emptyState = document.getElementById('empty-state');
     const progressBar = document.getElementById('optimization_progress');
     const messageEl = document.getElementById('optimization_message');
+    const percentageEl = document.getElementById('progress-percentage');
     const resultsList = document.getElementById('results_list');
-    
+    const statusBadge = document.getElementById('status-badge');
+
     statusDiv.style.display = 'block';
     resultsDiv.style.display = 'none';
-    progressBar.style.width = '0%';
-    messageEl.textContent = 'Iniciando optimización...';
-    
+    emptyState.style.display = 'none';
+    progressBar.style.width = '10%';
+    percentageEl.textContent = '10%';
+    messageEl.textContent = 'Analizando CV y ofertas...';
+
+    statusBadge.className = 'badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 animate-pulse';
+    statusBadge.textContent = 'Optimizando...';
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Procesando...';
+
     fetch('/api/batch_optimize', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        filename: filename,
-        num_jobs: numJobs
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename: filename, num_jobs: numJobs })
+    })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          progressBar.style.width = '100%';
+          percentageEl.textContent = '100%';
+          progressBar.classList.remove('progress-bar-striped', 'progress-bar-animated');
+          progressBar.classList.add('bg-success');
+
+          messageEl.textContent = `¡Proceso finalizado!`;
+          statusBadge.className = 'badge bg-success bg-opacity-10 text-success border border-success border-opacity-25';
+          statusBadge.textContent = 'Completado';
+
+          let html = '';
+          data.results.forEach(result => {
+            const isSuccess = result.status === 'success';
+            html += '<tr>';
+            html += `<td class="ps-3 fw-medium">${result.job_title}</td>`;
+            html += `<td class="text-muted">${result.company}</td>`;
+            html += `<td class="text-center"><span class="badge ${isSuccess ? 'bg-success' : 'bg-danger'} bg-opacity-10 ${isSuccess ? 'text-success' : 'text-danger'} border ${isSuccess ? 'border-success' : 'border-danger'} border-opacity-25">${isSuccess ? 'Éxito' : 'Error'}</span></td>`;
+
+            if (result.filename) {
+              html += `<td class="pe-3 text-end"><a href="/download_resume/${result.filename}" class="btn btn-sm btn-primary"><i class="bi bi-download me-1"></i> Descargar</a></td>`;
+            } else {
+              html += `<td class="pe-3 text-end text-muted small">${result.error ? result.error.substring(0, 20) + '...' : 'Fallido'}</td>`;
+            }
+            html += '</tr>';
+          });
+
+          resultsList.innerHTML = html;
+          resultsDiv.style.display = 'block';
+        } else {
+          throw new Error(data.error || 'Error desconocido');
+        }
       })
-    })
-    .then(response => response.json())
-    .then(data => {
-      if (data.success) {
-        progressBar.style.width = '100%';
-        messageEl.textContent = `¡Completado! Generados ${data.successful} de ${data.total} currículums.`;
-        
-        let html = '<div class="table-responsive"><table class="table table-striped"><thead><tr><th>Título del Puesto</th><th>Empresa</th><th>Estado</th><th>Descargar</th></tr></thead><tbody>';
-        
-        data.results.forEach(result => {
-          html += '<tr>';
-          html += `<td>${result.job_title}</td>`;
-          html += `<td>${result.company}</td>`;
-          html += `<td><span class="badge ${result.status === 'success' ? 'bg-success' : 'bg-danger'}">${result.status === 'success' ? 'éxito' : 'fallido'}</span></td>`;
-          if (result.filename) {
-            html += `<td><a href="/download_resume/${result.filename}" class="btn btn-sm btn-primary">Descargar</a></td>`;
-          } else {
-            html += `<td>${result.error || 'Fallido'}</td>`;
-          }
-          html += '</tr>';
-        });
-        
-        html += '</tbody></table></div>';
-        resultsList.innerHTML = html;
-        resultsDiv.style.display = 'block';
-      } else {
-        alert('Error: ' + data.error);
-        messageEl.textContent = 'Error: ' + data.error;
-      }
-    })
-    .catch(error => {
-      console.error('Error:', error);
-      alert('Error al optimizar currículums: ' + error.message);
-      messageEl.textContent = 'Error: ' + error.message;
-    });
+      .catch(error => {
+        console.error('Error:', error);
+        messageEl.textContent = 'Error: ' + error.message;
+        progressBar.classList.add('bg-danger');
+        statusBadge.className = 'badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25';
+        statusBadge.textContent = 'Error';
+        alert('Ocurrió un error: ' + error.message);
+      })
+      .finally(() => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-magic me-2"></i> Optimizar CVs';
+      });
   });
 </script>
 {% endblock %}
-

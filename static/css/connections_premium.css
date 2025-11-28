@@ -1,0 +1,224 @@
+/* ========== PREMIUM CONNECTIONS/NETWORKING STYLES ========== */
+
+/* Page Header */
+h2 {
+    color: #1f2937;
+    font-weight: 700;
+    animation: fadeInDown 0.6s ease-out;
+}
+
+.text-muted {
+    color: #6b7280 !important;
+}
+
+/* Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 0.625rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline-primary {
+    border: 2px solid #3b82f6;
+    color: #3b82f6;
+    border-radius: 10px;
+    padding: 0.625rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-color: transparent;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+}
+
+.btn-danger:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3);
+}
+
+.btn-danger:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.6s ease-out both;
+    overflow: hidden;
+}
+
+.card:hover {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    background: linear-gradient(to right, #ffffff, #f9fafb);
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* List Group (Companies) */
+.list-group-item {
+    border: none;
+    border-bottom: 1px solid #f3f4f6;
+    transition: all 0.2s ease;
+    padding: 1rem 1.5rem;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.list-group-item:hover {
+    background-color: #f9fafb;
+    padding-left: 1.75rem;
+}
+
+.bg-light.rounded.text-primary {
+    background-color: #eff6ff !important;
+    color: #3b82f6 !important;
+}
+
+/* Forms */
+.form-control,
+.form-select {
+    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    background-color: #f9fafb;
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: #fff;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.input-group-text {
+    border: 2px solid #e5e7eb;
+    border-right: none;
+    background-color: #f3f4f6;
+    border-radius: 10px 0 0 10px;
+    color: #6b7280;
+}
+
+.input-group .form-control {
+    border-radius: 0 10px 10px 0;
+}
+
+.form-check-input {
+    width: 1.2em;
+    height: 1.2em;
+    margin-top: 0.2em;
+    border: 2px solid #d1d5db;
+    cursor: pointer;
+}
+
+.form-check-input:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.form-check-label {
+    cursor: pointer;
+    font-weight: 500;
+    color: #4b5563;
+}
+
+/* Status Box */
+.status-box {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+}
+
+.progress {
+    background-color: #e5e7eb;
+    border-radius: 999px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+    border-radius: 999px;
+    transition: width 0.5s ease;
+}
+
+.badge {
+    padding: 0.5em 0.8em;
+    border-radius: 6px;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .5;
+    }
+}

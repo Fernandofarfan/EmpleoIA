@@ -2,10 +2,10 @@
 <div class="container-fluid mt-3">
   <div class="row mb-3">
     <div class="col-12">
-      <h3>Viewing: {{ filename }}</h3>
+      <h3>Visualizando: {{ filename }}</h3>
       <div class="alert alert-info">
-        <i class="bi bi-info-circle"></i> <strong>Total Jobs:</strong> {{
-        total_jobs }} | Click "Applied" toggle after applying to each job
+        <i class="bi bi-info-circle"></i> <strong>Total de Empleos:</strong> {{
+        total_jobs }} | Haz clic en "Aplicado" después de postularte a cada trabajo
       </div>
     </div>
   </div>
@@ -13,13 +13,13 @@
   <div class="row mb-3">
     <div class="col-12 text-end">
       <button class="btn btn-success me-2" onclick="saveApplicationStatus()">
-        <i class="bi bi-save"></i> Save & Submit Applications
+        <i class="bi bi-save"></i> Guardar y Enviar Postulaciones
       </button>
       <a href="/download_csv/{{ filename }}" class="btn btn-primary me-2">
-        <i class="bi bi-download"></i> Download Full CSV
+        <i class="bi bi-download"></i> Descargar CSV Completo
       </a>
       <a href="{{ url_for('results') }}" class="btn btn-secondary">
-        <i class="bi bi-arrow-left"></i> Back to Results
+        <i class="bi bi-arrow-left"></i> Volver a Resultados
       </a>
     </div>
   </div>
@@ -31,12 +31,12 @@
   </div>
 </div>
 
-<!-- Success Modal (same as before) -->
+<!-- Success Modal -->
 <div class="modal fade" id="successModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header bg-success text-white">
-        <h5 class="modal-title">Applications Saved</h5>
+        <h5 class="modal-title">Postulaciones Guardadas</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
@@ -44,16 +44,16 @@
         <div class="form-check mt-3">
           <input class="form-check-input" type="checkbox" id="sendConnections" checked />
           <label class="form-check-label" for="sendConnections">
-            Send LinkedIn connection requests to applied companies
+            Enviar solicitudes de conexión de LinkedIn a empresas aplicadas
           </label>
         </div>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-          Close
+          Cerrar
         </button>
         <button type="button" class="btn btn-primary" onclick="processConnections()">
-          Proceed
+          Continuar
         </button>
       </div>
     </div>
@@ -61,26 +61,6 @@
 </div>
 
 <script>
-  // Address mapping (same as before)
-  const addressMap = {
-    'CA': '824 6th St, Bakersfield, CA 93304',
-    'OH': ['214 E Central St, Fairview, OH 73737', '170 Devonhurst Dr, Dayton, OH 45429'],
-    'FL': ['Grayrock Trail, Windermere, FL 34786', '11621 NW 8th St Apt 7, Miami, FL 33182'],
-    'MO': ['McPherson Ave, St. Louis, MO 63108', 'Eminor Drive 627, Kansas, MO 64144'],
-    'CO': '3774 S Emporia Way, Aurora, CO 80014',
-    'NM': '6332 Entrada de Milagro Apt 515, Santa Fe, NM 87501',
-    'TX': '1711 E Belt Line Rd, Coppell, Texas 75019',
-    'NC': '9501 University Terrace Drive Unit E, Charlotte, NC',
-    'SC': '4206 Linville Way, Indian Land, SC 29707',
-    'AL': '1611 15th Ave S, Apt H 2nd Floor, Birmingham, Alabama 35205',
-    'NJ': '95G Beverly Hill Terrace, Woodbridge, NJ 07095',
-    'GA': '550 northridge pkwy, atlanta, GA, 30350',
-    'IL': '713 s Aberdeen st, Chicago 60607',
-    'MA': '29 lambert st, boston, 02119',
-    'NY': 'Albany, NY 12226',
-    'Bay Area': '672 Amalfi loop Milpitas, Bay area, Ca, 95035'
-  };
-
   let appliedJobs = {};
 
   document.addEventListener('DOMContentLoaded', function () {
@@ -101,18 +81,18 @@
 
     headers.forEach((header, index) => {
       const text = header.textContent.trim();
-      if (text.includes('Job_Link') || text === 'URL') jobLinkIndex = index;
+      if (text.includes('Enlace') || text === 'URL') jobLinkIndex = index;
       if (text === 'Apply_URL') applyUrlIndex = index;
     });
 
     // Insert Track button header
     const trackHeader = document.createElement('th');
-    trackHeader.innerHTML = 'Actions';
+    trackHeader.innerHTML = 'Acciones';
     trackHeader.style.width = '180px'; // Wider for two buttons
 
     // Insert Applied header
     const appliedHeader = document.createElement('th');
-    appliedHeader.innerHTML = 'Applied';
+    appliedHeader.innerHTML = 'Aplicado';
     appliedHeader.style.width = '80px';
 
     // Insert headers after Job_Link
@@ -131,11 +111,6 @@
       headers[applyUrlIndex].style.display = 'none';
     }
 
-    // Add Suggested Address column header at the end
-    const addressHeader = document.createElement('th');
-    addressHeader.innerHTML = 'Suggested Address';
-    headerRow.appendChild(addressHeader);
-
     // Process each row
     bodyRows.forEach((row, index) => {
       const cells = row.querySelectorAll('td');
@@ -151,20 +126,20 @@
         applyUrl = link ? link.href : '#';
       }
 
-      // Create Actions cell (Track + Apply)
+      // Create Actions cell (Super Button)
       const actionsCell = document.createElement('td');
+
+      // Determine if we have a valid URL
+      const hasUrl = applyUrl && applyUrl !== '#' && applyUrl !== 'N/A';
+
       actionsCell.innerHTML = `
               <div class="d-flex gap-2">
-                  <button class="btn btn-sm btn-outline-primary" 
-                          onclick="addJobToTracker(${index}, event)"
-                          title="Add to Job Tracker">
-                      <i class="bi bi-kanban"></i> Track
+                  <button class="btn btn-sm btn-primary fw-bold" 
+                          onclick="applyAndTrack(${index}, '${hasUrl ? applyUrl : ''}', event)"
+                          title="Postular, Seguir y Marcar como Aplicado"
+                          ${!hasUrl ? 'disabled' : ''}>
+                      <i class="bi bi-rocket-takeoff"></i> Postular y Seguir
                   </button>
-                  ${applyUrl && applyUrl !== '#' ? `
-                  <a href="${applyUrl}" target="_blank" class="btn btn-sm btn-success" title="Apply on Company Site">
-                      <i class="bi bi-box-arrow-up-right"></i> Apply
-                  </a>
-                  ` : ''}
               </div>
           `;
 
@@ -185,64 +160,57 @@
         row.appendChild(actionsCell);
         row.appendChild(toggleCell);
       }
-
-      // Add suggested address at the end
-      const locationCell = cells[2]; // Location is typically 3rd column (index 2)
-      const location = locationCell ? locationCell.textContent : '';
-      const addressCell = document.createElement('td');
-      addressCell.className = 'small';
-      addressCell.textContent = getMatchingAddress(location);
-      row.appendChild(addressCell);
     });
   }
 
-  function getMatchingAddress(location) {
-    if (!location || location === 'Not specified') return 'Remote/Flexible';
-
-    const locationUpper = location.toUpperCase();
-
-    // Check for state matches
-    for (const [state, address] of Object.entries(addressMap)) {
-      if (locationUpper.includes(state)) {
-        return Array.isArray(address) ? address[0] : address;
-      }
+  function applyAndTrack(index, url, event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
     }
 
-    // Check for city matches
-    if (locationUpper.includes('NEW YORK') || locationUpper.includes('ALBANY')) return addressMap['NY'];
-    if (locationUpper.includes('BOSTON')) return addressMap['MA'];
-    if (locationUpper.includes('CHICAGO')) return addressMap['IL'];
-    if (locationUpper.includes('ATLANTA')) return addressMap['GA'];
-    if (locationUpper.includes('MIAMI')) return addressMap['FL'][1];
-    if (locationUpper.includes('AUSTIN') || locationUpper.includes('DALLAS') || locationUpper.includes('COPPELL')) return addressMap['TX'];
-    if (locationUpper.includes('SAN FRANCISCO') || locationUpper.includes('SAN JOSE')) return addressMap['Bay Area'];
-    if (locationUpper.includes('SEATTLE')) return 'Remote/Flexible';
-    if (locationUpper.includes('WARNER ROBINS')) return addressMap['GA'];
-    if (locationUpper.includes('AMES')) return 'Remote/Flexible';
-    if (locationUpper.includes('NEBRASKA')) return 'Remote/Flexible';
-    if (locationUpper.includes('NORWALK')) return addressMap['CT'] || 'Remote/Flexible';
-    if (locationUpper.includes('BIRMINGHAM')) return addressMap['AL'];
-    if (locationUpper.includes('AURORA')) return addressMap['CO'];
+    if (!url) {
+      alert('No hay enlace de postulación disponible para este trabajo.');
+      return;
+    }
 
-    return 'Remote/Flexible';
+    // 1. Open URL in new tab
+    window.open(url, '_blank');
+
+    // 2. Mark as Applied (visually and in data)
+    const toggle = document.getElementById(`applied_${index}`);
+    if (toggle && !toggle.checked) {
+      toggle.checked = true;
+      toggleApplied(index, toggle); // Updates appliedJobs and row style
+    }
+
+    // 3. Add to Tracker (as applied)
+    addJobToTracker(index, event);
   }
 
   function toggleApplied(index, checkbox) {
     const row = checkbox.closest('tr');
     const cells = row.querySelectorAll('td');
 
+    // Find column indices dynamically to be safe
+    const table = document.getElementById('jobTable');
+    const headerRow = table.querySelector('thead tr');
+    const headers = Array.from(headerRow.querySelectorAll('th')).map(th => th.textContent.trim());
+
+    const titleIdx = headers.indexOf('Título');
+    const companyIdx = headers.indexOf('Empresa');
+    const locationIdx = headers.indexOf('Ubicación');
+    const jobLinkIdx = headers.indexOf('Enlace');
+
     if (checkbox.checked) {
-      // Extract job data from row - adjust indices based on new column position
+      // Extract job data from row
       const jobData = {
-        title: cells[0].textContent.trim(),  // Title
-        company: cells[1].textContent.trim(), // Company
-        location: cells[2].textContent.trim(), // Location
-        salary: cells[3].textContent.trim(), // Salary
-        job_link: cells[4].querySelector('a') ? cells[4].querySelector('a').href : 'Not specified', // Job_Link
-        experience_category: cells[5].textContent.trim(), // Experience_Category
+        title: titleIdx !== -1 && cells[titleIdx] ? cells[titleIdx].textContent.trim() : 'Not specified',
+        company: companyIdx !== -1 && cells[companyIdx] ? cells[companyIdx].textContent.trim() : 'Not specified',
+        location: locationIdx !== -1 && cells[locationIdx] ? cells[locationIdx].textContent.trim() : 'Not specified',
+        job_link: jobLinkIdx !== -1 && cells[jobLinkIdx] ? cells[jobLinkIdx].querySelector('a')?.href || '' : 'Not specified',
         job_type: 'Not specified',
         description: '',
-        suggested_address: cells[7].textContent.trim(), // Suggested Address (last column)
         applied_date: new Date().toISOString()
       };
 
@@ -258,7 +226,7 @@
     const appliedCount = Object.keys(appliedJobs).length;
 
     if (appliedCount === 0) {
-      alert('Please mark at least one job as applied before saving.');
+      alert('Por favor marca al menos un trabajo como aplicado antes de guardar.');
       return;
     }
 
@@ -271,19 +239,19 @@
         filename: '{{ filename }}',
         applied_jobs: appliedJobs,
         total_jobs: {{ total_jobs }}
-          })
       })
-      .then(response => response.json())
+    })
+    .then(response => response.json())
     .then(data => {
       if (data.success) {
         document.getElementById('modalMessage').textContent =
-          `Successfully saved ${data.saved} job application(s) for ${data.companies.length} companies.`;
+          `Guardado exitosamente ${data.saved} postulación(es) para ${data.companies.length} empresas.`;
         new bootstrap.Modal(document.getElementById('successModal')).show();
       }
     })
     .catch(error => {
       console.error('Error saving applications:', error);
-      alert('Error saving applications. Please try again.');
+      alert('Error guardando postulaciones. Por favor intenta de nuevo.');
     });
   }
 
@@ -313,6 +281,7 @@
     const cells = row.querySelectorAll('td');
 
     // Get the button element first
+    // Note: When called from applyAndTrack, evt.target might be the icon or the button
     const button = evt ? evt.target.closest('button') : null;
 
     // Check if button is already disabled (already added)
@@ -322,14 +291,13 @@
     }
 
     // Find column indices dynamically
-    const titleIdx = headers.indexOf('Title');
-    const companyIdx = headers.indexOf('Company');
-    const locationIdx = headers.indexOf('Location');
-    const salaryIdx = headers.indexOf('Salary');
-    const jobLinkIdx = headers.indexOf('Job_Link');
-    const appliedIdx = headers.indexOf('Applied');
+    const titleIdx = headers.indexOf('Título');
+    const companyIdx = headers.indexOf('Empresa');
+    const locationIdx = headers.indexOf('Ubicación');
+    const jobLinkIdx = headers.indexOf('Enlace');
+    const appliedIdx = headers.indexOf('Aplicado');
 
-    console.log('Column indices:', { titleIdx, companyIdx, locationIdx, salaryIdx, jobLinkIdx, appliedIdx });
+    console.log('Column indices:', { titleIdx, companyIdx, locationIdx, jobLinkIdx, appliedIdx });
 
     // Check if "Applied" toggle is checked for this row
     const appliedToggle = appliedIdx !== -1 && cells[appliedIdx] ?
@@ -344,7 +312,6 @@
       title: titleIdx !== -1 && cells[titleIdx] ? cells[titleIdx].textContent.trim() : 'Not specified',
       company: companyIdx !== -1 && cells[companyIdx] ? cells[companyIdx].textContent.trim() : 'Not specified',
       location: locationIdx !== -1 && cells[locationIdx] ? cells[locationIdx].textContent.trim() : 'Not specified',
-      salary: salaryIdx !== -1 && cells[salaryIdx] ? cells[salaryIdx].textContent.trim() : 'Not specified',
       job_link: jobLinkIdx !== -1 && cells[jobLinkIdx] ? cells[jobLinkIdx].querySelector('a')?.href || '' : '',
       status: status,
       excitement: 3,  // Default excitement level
@@ -356,7 +323,7 @@
     // Disable button immediately to prevent double-clicks
     if (button) {
       button.disabled = true;
-      button.innerHTML = '<i class="bi bi-hourglass-split"></i> Adding...';
+      button.innerHTML = '<i class="bi bi-hourglass-split"></i> Añadiendo...';
     }
 
     // Send to API
@@ -385,22 +352,24 @@
         if (data.success) {
           // Show success message
           if (button) {
-            button.innerHTML = '<i class="bi bi-check-circle-fill"></i> Tracked!';
+            button.innerHTML = '<i class="bi bi-check-circle-fill"></i> Seguido!';
             button.classList.remove('btn-outline-primary');
             button.classList.add('btn-success');
             button.disabled = true;
           }
 
           // Show success notification with status
-          const statusMsg = jobData.status === 'applied' ? 'APPLIED' : 'BOOKMARKED';
-          alert(`Ô£à Job added to ${statusMsg} column in tracker!`);
+          const statusMsg = jobData.status === 'applied' ? 'APLICADO' : 'GUARDADO';
+          // alert(`Ô£à Trabajo añadido a la columna ${statusMsg} en el rastreador!`);
+          // Removed alert to avoid popup spam when using Super Button
+          console.log(`Trabajo añadido a la columna ${statusMsg} en el rastreador!`);
         } else {
           // Re-enable button on error
           if (button) {
             button.disabled = false;
-            button.innerHTML = '<i class="bi bi-kanban"></i> Track';
+            button.innerHTML = '<i class="bi bi-rocket-takeoff"></i> Postular y Seguir';
           }
-          alert('ÔØî Error: ' + (data.error || 'Unknown error'));
+          alert('ÔØî Error: ' + (data.error || 'Error desconocido'));
           console.error('API Error:', data);
         }
       })
@@ -408,12 +377,13 @@
         // Handle duplicate error
         if (error.isDuplicate) {
           if (button) {
-            button.innerHTML = '<i class="bi bi-check-circle"></i> Already Tracked';
+            button.innerHTML = '<i class="bi bi-check-circle"></i> Ya Seguido';
             button.classList.remove('btn-outline-primary');
             button.classList.add('btn-secondary');
             button.disabled = true;
           }
-          alert('Ôä╣´©Å This job is already in your tracker!');
+          // alert('Ôä╣´©Å Este trabajo ya está en tu rastreador!');
+          console.log('Este trabajo ya está en tu rastreador!');
           return;
         }
 
@@ -426,13 +396,16 @@
         // Re-enable button on error
         if (button) {
           button.disabled = false;
-          button.innerHTML = '<i class="bi bi-kanban"></i> Track';
+          button.innerHTML = '<i class="bi bi-rocket-takeoff"></i> Postular y Seguir';
         }
 
-        alert('ÔØî Error: ' + (error.message || 'Unknown error'));
+        alert('ÔØî Error: ' + (error.message || 'Error desconocido'));
       });
   }
 </script>
+
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/view_file_premium.css') }}">
 
 <style>
   .table-success {

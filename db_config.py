@@ -18,8 +18,8 @@ class DatabaseManager:
             'user': 'root',
             'password': os.getenv('DB_PASSWORD', ''),
             'database': 'job_tracker',
-            'pool_name': 'job_pool',
-            'pool_size': 5
+            'pool_name': 'job_pool_v2',
+            'pool_size': 2
         }
         
         try:

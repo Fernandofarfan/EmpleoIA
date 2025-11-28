@@ -4,7 +4,7 @@ import threading
 import logging
 import glob
 from datetime import datetime
-import time
+
 import pandas as pd
 import random
 import sys
@@ -26,9 +26,6 @@ from scrapers.bumeran_scraper import BumeranScraper
 
 
 from resume_parser import resumeParser, jobMatcher
-from job_precheck import extract_skills_from_text
-from simple_resume_optimizer import simpleResumeOptimizer
-from cover_letter_generator import CoverLetterGenerator
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -651,17 +648,32 @@ def view_file(filename):
                 df = df.sort_values('overall_match', ascending=False)
             
             # Select columns to display (excluding match scores)
-            # Select columns to display (excluding match scores)
-            display_columns = ['Title', 'Company', 'Location', 'Salary', 'Job_Link', 'URL', 'Apply_URL', 'Experience_Category']
+            # Define column mapping (English -> Spanish)
+            column_mapping = {
+                'Title': 'Título',
+                'Company': 'Empresa',
+                'Location': 'Ubicación',
+                'Salary': 'Salario',
+                'Job_Link': 'Enlace',
+                'URL': 'URL',
+                'Apply_URL': 'Apply_URL',
+                'Experience_Category': 'Categoría de Experiencia'
+            }
+
+            # Rename columns in the main dataframe if they exist
+            df = df.rename(columns=column_mapping)
+
+            # Select columns to display (using Spanish names)
+            display_columns = ['Título', 'Empresa', 'Ubicación', 'Enlace', 'URL', 'Apply_URL']
             
             display_columns = [col for col in display_columns if col in df.columns]
             
             display_df = df[display_columns].copy()
             
             # Make job links clickable
-            if 'Job_Link' in display_df.columns:
-                display_df['Job_Link'] = display_df['Job_Link'].apply(
-                    lambda x: f'<a href="{x}" target="_blank" class="btn btn-sm btn-primary">Apply</a>' 
+            if 'Enlace' in display_df.columns:
+                display_df['Enlace'] = display_df['Enlace'].apply(
+                    lambda x: f'<a href="{x}" target="_blank" class="btn btn-sm btn-primary">Postular</a>' 
                     if pd.notna(x) and str(x).startswith('http') else 'N/A'
                 )
             
@@ -682,6 +694,7 @@ def view_file(filename):
             flash('File not found or not a CSV file', 'danger')
             return redirect(url_for('results'))
     except Exception as e:
+        logger.error(f"Error viewing file: {str(e)}")
         flash(f'Error viewing file: {str(e)}', 'danger')
         return redirect(url_for('results'))
 

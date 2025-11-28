@@ -11,6 +11,11 @@ from collections import Counter
 import json
 from datetime import datetime
 
+import google.generativeai as genai
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class resumeParser:
     def __init__(self):
         
@@ -19,6 +24,8 @@ class resumeParser:
         except OSError:
             print("Warning: spaCy model not found. Install with: python -m spacy download en_core_web_sm")
             self.nlp = None
+            
+        self.configure_genai()
         
         self.technical_skills = {
             'programming_languages': [
@@ -55,6 +62,21 @@ class resumeParser:
         self.all_technical_skills = []
         for category in self.technical_skills.values():
             self.all_technical_skills.extend(category)
+
+    def configure_genai(self):
+        api_key = os.getenv("GEMINI_API_KEY")
+        if api_key:
+            try:
+                genai.configure(api_key=api_key)
+                self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
+                self.use_ai = True
+                print("✅ Gemini AI configured successfully")
+            except Exception as e:
+                print(f"Error configuring Gemini AI: {e}")
+                self.use_ai = False
+        else:
+            self.use_ai = False
+            print("Warning: GEMINI_API_KEY not found. Using regex-based parsing.")
 
     def extract_text_from_file(self, file_path):
         
@@ -272,6 +294,48 @@ class resumeParser:
         
         return education_info
 
+    def parse_with_ai(self, text):
+        if not self.use_ai:
+            return None
+            
+        prompt = f"""
+        You are an expert Resume Parser. Extract the following information from the resume text below.
+        Return ONLY a valid JSON object with no markdown formatting.
+        
+        JSON Structure:
+        {{
+            "skills": ["skill1", "skill2", ...],
+            "experience_years": <number (float)>,
+            "education": ["degree 1", "degree 2", ...],
+            "summary": "<brief professional summary>"
+        }}
+        
+        Rules:
+        1. experience_years: Calculate the TOTAL years of PROFESSIONAL work experience. 
+           - EXCLUDE internships, volunteer work, and education periods unless they were full-time professional roles.
+           - If there are overlapping roles, count the time only once.
+           - Round to 1 decimal place.
+        2. skills: Extract technical skills, programming languages, tools, and frameworks.
+        3. education: Extract degrees and universities.
+        
+        Resume Text:
+        {text}
+        """
+        
+        try:
+            response = self.model.generate_content(prompt)
+            json_str = response.text.strip()
+            # Clean up potential markdown code blocks
+            if json_str.startswith("```json"):
+                json_str = json_str[7:]
+            if json_str.endswith("```"):
+                json_str = json_str[:-3]
+            
+            return json.loads(json_str.strip())
+        except Exception as e:
+            print(f"Error parsing with AI: {e}")
+            return None
+
     def parse_resume(self, file_path):
        
         text = self.extract_text_from_file(file_path)
@@ -282,20 +346,34 @@ class resumeParser:
         print("Parsing resume...")
         print(f"Text length: {len(text)} characters")
         
-        skills = self.extract_skills(text)
-        experience_years = self.extract_experience_years(text)
-        education = self.extract_education(text)
-        
-        print(f"Found {len(skills)} skills")
-        print(f"Calculated {experience_years} years of experience")
-        print(f"Found {len(education)} education entries")
-        
         profile = {
-            'skills': skills,
-            'experience_years': experience_years,
-            'education': education,
-            'raw_text': text
+            'raw_text': text,
+            'skills': [],
+            'experience_years': 0,
+            'education': []
         }
+        
+        # Try AI parsing first
+        ai_result = self.parse_with_ai(text)
+        
+        if ai_result:
+            print("✅ Successfully parsed resume with AI")
+            profile['skills'] = ai_result.get('skills', [])
+            profile['experience_years'] = ai_result.get('experience_years', 0)
+            profile['education'] = ai_result.get('education', [])
+            
+            # Fallback for empty skills if AI fails to extract them but gets other things
+            if not profile['skills']:
+                 profile['skills'] = self.extract_skills(text)
+        else:
+            print("⚠️ AI parsing failed or disabled. Falling back to regex parsing")
+            profile['skills'] = self.extract_skills(text)
+            profile['experience_years'] = self.extract_experience_years(text)
+            profile['education'] = self.extract_education(text)
+        
+        print(f"Found {len(profile['skills'])} skills")
+        print(f"Calculated {profile['experience_years']} years of experience")
+        print(f"Found {len(profile['education'])} education entries")
         
         return profile
 

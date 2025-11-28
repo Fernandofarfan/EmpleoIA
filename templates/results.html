@@ -1,62 +1,103 @@
 <!-- job_scraper_app/templates/results.html -->
-{% extends "base.html" %} {% block content %}
-<h2 class="mb-4">Job Results</h2>
+{% extends "base.html" %}
 
-<div class="row mb-4">
-  <div class="col-12">
-    <div class="card shadow">
-      <div class="card-header bg-primary text-white">
-        <h4 class="mb-0">
-          <i class="bi bi-file-earmark-spreadsheet"></i> Available Job Files
-        </h4>
-      </div>
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/results_premium.css') }}">
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <div>
+    <h2 class="fw-bold mb-1">Resultados de Búsqueda</h2>
+    <p class="text-muted mb-0">Gestiona y descarga tus archivos de empleos recolectados</p>
+  </div>
+  <a href="/scraper" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-2"></i>Nueva Búsqueda
+  </a>
+</div>
+
+{% if job_files %}
+<!-- Files Grid -->
+<div class="row g-4">
+  {% for filename in job_files %}
+  <div class="col-md-6 col-lg-4">
+    <div class="card file-card h-100">
       <div class="card-body">
-        {% if job_files %}
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th>Filename</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for filename in job_files %}
-              <tr>
-                <td>{{ filename }}</td>
-                <td>
-                  <a href="/results/{{ filename }}" class="btn btn-sm btn-primary" download>
-                    <i class="bi bi-download"></i> Download
-                  </a>
-                  <a href="/view/{{ filename }}" class="btn btn-sm btn-info">
-                    <i class="bi bi-eye"></i> View
-                  </a>
-                  <a href="/extract_companies/{{ filename }}" class="btn btn-sm btn-success">
-                    <i class="bi bi-building"></i> Extract Companies
-                  </a>
-                  <a href="/batch_cover_letters" class="btn btn-sm btn-success">
-                    <i class="bi bi-envelope-paper"></i> Cover Letters
-                  </a>
-                  <a href="/batch_optimize" class="btn btn-sm btn-warning">
-                    <i class="bi bi-magic"></i> Optimize Resumes
-                  </a>
-                  <a href="/delete_csv/{{ filename }}" class="btn btn-sm btn-danger"
-                    onclick="return confirm('Are you sure you want to delete this file?');">
-                    <i class="bi bi-trash"></i> Delete
-                  </a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <!-- Icon -->
+        <div class="text-center mb-3">
+          <div class="file-icon-wrapper">
+            <i class="bi bi-file-earmark-spreadsheet file-icon"></i>
+          </div>
         </div>
-        {% else %}
-        <div class="alert alert-info">
-          No job files available yet. Run a scraper first to collect job data.
+
+        <!-- Filename -->
+        <h5 class="card-title text-center mb-3">{{ filename }}</h5>
+        <p class="text-center text-muted small mb-4">
+          <i class="bi bi-clock me-1"></i>Reciente
+        </p>
+
+        <!-- Actions -->
+        <div class="d-grid gap-2">
+          <a href="/view/{{ filename }}" class="btn btn-primary">
+            <i class="bi bi-eye me-2"></i>Ver Online
+          </a>
+          <a href="/results/{{ filename }}" class="btn btn-outline-primary" download>
+            <i class="bi bi-download me-2"></i>Descargar CSV
+          </a>
         </div>
-        {% endif %}
+
+        <!-- Dropdown Menu -->
+        <div class="dropdown mt-3">
+          <button class="btn btn-outline-secondary w-100 dropdown-toggle" type="button" data-bs-toggle="dropdown">
+            <i class="bi bi-three-dots me-2"></i>Más Opciones
+          </button>
+          <ul class="dropdown-menu w-100">
+            <li>
+              <h6 class="dropdown-header">Herramientas IA</h6>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/extract_companies/{{ filename }}">
+                <i class="bi bi-building me-2 text-primary"></i>Extraer Empresas
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/batch_cover_letters">
+                <i class="bi bi-envelope-paper me-2 text-success"></i>Generar Cartas
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/batch_optimize">
+                <i class="bi bi-magic me-2 text-warning"></i>Optimizar CVs
+              </a>
+            </li>
+            <li>
+              <hr class="dropdown-divider">
+            </li>
+            <li>
+              <a class="dropdown-item text-danger" href="/delete_csv/{{ filename }}"
+                onclick="return confirm('¿Estás seguro de eliminar este archivo?');">
+                <i class="bi bi-trash me-2"></i>Eliminar Archivo
+              </a>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
+  {% endfor %}
 </div>
+
+{% else %}
+<!-- Empty State -->
+<div class="empty-state">
+  <div class="empty-icon">
+    <i class="bi bi-folder2-open"></i>
+  </div>
+  <h3 class="mb-3">No hay archivos disponibles</h3>
+  <p class="text-muted mb-4">Ejecuta una búsqueda para comenzar a recolectar empleos</p>
+  <a href="/scraper" class="btn btn-primary btn-lg">
+    <i class="bi bi-search me-2"></i>Ir al Scraper
+  </a>
+</div>
+{% endif %}
+
 {% endblock %}

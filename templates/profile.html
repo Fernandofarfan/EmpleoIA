@@ -1,180 +1,179 @@
-<!-- templates/profile.html -->
-{% extends "base.html" %} {% block content %}
-<div class="container mt-4">
-  <h2 class="mb-4">📋 Multi-Resume Profile Manager</h2>
+{% extends "base.html" %}
+{% block content %}
+<div class="row mt-4">
+  <!-- Sidebar: Status & Info -->
+  <div class="col-lg-4 mb-4">
+    <!-- Profile Status Card -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-body p-4">
+        <h5 class="fw-bold mb-4">
+          <i class="bi bi-person-badge me-2 text-primary"></i> Estado de Perfiles
+        </h5>
 
-  <div class="row">
-    <!-- Upload Form -->
-    <div class="col-md-8">
-      <div class="card shadow mb-4">
-        <div class="card-header bg-success text-white">
-          <h4 class="mb-0">
-            <i class="bi bi-upload"></i> Upload Resume
-          </h4>
+        <div class="text-center mb-4">
+          <div class="position-relative d-inline-block">
+            <svg width="120" height="120">
+              <circle cx="60" cy="60" r="54" fill="none" stroke="#e5e7eb" stroke-width="8" />
+              <circle id="progressCircle" cx="60" cy="60" r="54" fill="none" stroke="#4f46e5" stroke-width="8"
+                stroke-dasharray="339.292" stroke-dashoffset="339.292" transform="rotate(-90 60 60)"
+                style="transition: stroke-dashoffset 1s ease" />
+            </svg>
+            <div class="position-absolute top-50 start-50 translate-middle text-center">
+              <div class="fs-3 fw-bold text-primary" id="total-profiles">0</div>
+              <div class="small text-muted">Perfiles</div>
+            </div>
+          </div>
         </div>
-        <div class="card-body">
-          <form action="/upload_resume" method="post" enctype="multipart/form-data">
-            <!-- Step 1: Select Role Type -->
-            <div class="mb-3">
-              <label for="role_type" class="form-label">
-                <strong>Step 1:</strong> Select Role Type
-              </label>
+
+        <hr class="my-3 opacity-10">
+
+        <div id="profile-summary" class="d-flex flex-column gap-3">
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="small fw-medium">
+              <i class="bi bi-bar-chart me-2 text-muted"></i>Data Analyst
+            </span>
+            <span id="status-analyst" class="badge bg-light text-muted border">Pendiente</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="small fw-medium">
+              <i class="bi bi-gear me-2 text-muted"></i>Data Engineer
+            </span>
+            <span id="status-engineer" class="badge bg-light text-muted border">Pendiente</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="small fw-medium">
+              <i class="bi bi-clipboard-data me-2 text-muted"></i>Data Scientist
+            </span>
+            <span id="status-scientist" class="badge bg-light text-muted border">Pendiente</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="small fw-medium">
+              <i class="bi bi-robot me-2 text-muted"></i>AI/ML Engineer
+            </span>
+            <span id="status-ai" class="badge bg-light text-muted border">Pendiente</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span class="small fw-medium">
+              <i class="bi bi-file-text me-2 text-muted"></i>Otros
+            </span>
+            <span id="status-other" class="badge bg-light text-muted border">Pendiente</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- How it Works Card -->
+    <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+      <div class="card-body p-4 text-white">
+        <h6 class="fw-bold mb-3">
+          <i class="bi bi-lightning-charge me-2"></i> ¿Cómo funciona?
+        </h6>
+        <ul class="list-unstyled small mb-0 d-flex flex-column gap-2">
+          <li class="d-flex">
+            <i class="bi bi-check-circle-fill me-2 mt-1 opacity-75"></i>
+            <span>Sube un CV específico para cada rol que busques.</span>
+          </li>
+          <li class="d-flex">
+            <i class="bi bi-check-circle-fill me-2 mt-1 opacity-75"></i>
+            <span>El sistema extrae tus habilidades automáticamente.</span>
+          </li>
+          <li class="d-flex">
+            <i class="bi bi-check-circle-fill me-2 mt-1 opacity-75"></i>
+            <span>Las ofertas se emparejan con el CV más adecuado.</span>
+          </li>
+          <li class="d-flex">
+            <i class="bi bi-check-circle-fill me-2 mt-1 opacity-75"></i>
+            <span>Solo verás empleos con +60% de coincidencia.</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content: Upload & List -->
+  <div class="col-lg-8">
+    <!-- Upload Section with Drag & Drop -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+        <h4 class="fw-bold mb-0">Cargar Nuevo CV</h4>
+      </div>
+      <div class="card-body p-4">
+        <form action="/upload_resume" method="post" enctype="multipart/form-data" id="uploadForm">
+          <div class="row g-3 mb-4">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-muted">1. Tipo de Rol</label>
               <select class="form-select" id="role_type" name="role_type" required>
-                <option value="">-- Choose Role --</option>
+                <option value="">Seleccionar Rol...</option>
                 <option value="data_analyst">📊 Data Analyst</option>
                 <option value="data_engineer">⚙️ Data Engineer</option>
                 <option value="data_scientist">🔬 Data Scientist</option>
                 <option value="ai_engineer">🤖 AI/ML Engineer</option>
                 <option value="other">📄 Otros</option>
               </select>
-              <div class="form-text">
-                Choose the role that matches this resume
-              </div>
             </div>
 
-            <!-- Step 2: Upload Resume File -->
-            <div class="mb-3">
-              <label for="resume" class="form-label">
-                <strong>Step 2:</strong> Upload Resume File
-              </label>
-              <input type="file" class="form-control" id="resume" name="resume" accept=".pdf,.docx,.txt" required />
-              <div class="form-text">
-                Supported formats: PDF, DOCX, TXT (Max size: 16MB)
-              </div>
-            </div>
-
-            <!-- Step 3: Optional Additional Skills -->
-            <div class="mb-3">
-              <label for="additional_skills" class="form-label">
-                <strong>Step 3:</strong> Additional Skills (Optional)
-              </label>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold text-muted">3. Habilidades Adicionales (Opcional)</label>
               <input type="text" class="form-control" id="additional_skills" name="additional_skills"
-                placeholder="e.g., AWS, Docker, Kubernetes, TensorFlow (comma-separated)" />
-              <div class="form-text">
-                Skills will be auto-extracted from your resume, but you can add
-                more here
+                placeholder="ej. AWS, Docker, Kubernetes" />
+              <div class="form-text small">Se sumarán a las detectadas automáticamente.</div>
+            </div>
+          </div>
+
+          <!-- Drag & Drop Zone -->
+          <div class="mb-4">
+            <label class="form-label small fw-bold text-muted">2. Archivo (PDF/DOCX)</label>
+            <div id="dropZone" class="drop-zone">
+              <input type="file" class="d-none" id="resume" name="resume" accept=".pdf,.docx,.txt" required />
+              <div id="dropZoneContent" class="drop-zone-content">
+                <i class="bi bi-cloud-arrow-up display-1 text-primary mb-3"></i>
+                <h5 class="fw-bold mb-2">Arrastra tu CV aquí</h5>
+                <p class="text-muted mb-3">o haz clic para seleccionar</p>
+                <button type="button" class="btn btn-outline-primary"
+                  onclick="document.getElementById('resume').click()">
+                  <i class="bi bi-folder2-open me-2"></i>Seleccionar Archivo
+                </button>
+                <p class="small text-muted mt-3 mb-0">Formatos soportados: PDF, DOCX, TXT (Máx. 10MB)</p>
+              </div>
+              <div id="filePreview" class="file-preview" style="display: none;">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center gap-3">
+                    <div class="file-icon">
+                      <i class="bi bi-file-earmark-pdf-fill fs-1 text-danger"></i>
+                    </div>
+                    <div>
+                      <div class="fw-bold" id="fileName"></div>
+                      <div class="small text-muted" id="fileSize"></div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile()">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </div>
               </div>
             </div>
-
-            <button type="submit" class="btn btn-success btn-lg">
-              <i class="bi bi-upload"></i> Upload and Parse Resume
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Current Resume Profiles Table -->
-      <div class="card shadow">
-        <div class="card-header bg-primary text-white">
-          <h4 class="mb-0">
-            <i class="bi bi-folder"></i> Your Resume Profiles
-          </h4>
-        </div>
-        <div class="card-body">
-          <div class="table-responsive">
-            <table class="table table-striped table-hover">
-              <thead>
-                <tr>
-                  <th>Role Type</th>
-                  <th>Resume File</th>
-                  <th>Skills</th>
-                  <th>Experience</th>
-                  <th>Upload Date</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody id="profiles-table-body">
-                <tr>
-                  <td colspan="6" class="text-center text-muted">
-                    <div class="spinner-border spinner-border-sm" role="status">
-                      <span class="visually-hidden">Loading...</span>
-                    </div>
-                    Loading profiles...
-                  </td>
-                </tr>
-              </tbody>
-            </table>
           </div>
-        </div>
+
+          <button type="submit" class="btn btn-primary w-100 py-3" id="submitBtn">
+            <i class="bi bi-cloud-arrow-up me-2"></i> Subir y Analizar CV
+          </button>
+        </form>
       </div>
     </div>
 
-    <!-- How it Works Sidebar -->
-    <div class="col-md-4">
-      <div class="card shadow">
-        <div class="card-header bg-info text-white">
-          <h5 class="mb-0"><i class="bi bi-info-circle"></i> How it Works</h5>
-        </div>
-        <div class="card-body">
-          <ol class="small">
-            <li>
-              <strong>Upload multiple resumes</strong> - One for each role type
-              (Data Analyst, Engineer, Scientist, AI)
-            </li>
-            <li>
-              <strong>Auto skill extraction</strong> - System extracts skills,
-              experience, education
-            </li>
-            <li>
-              <strong>Smart job matching</strong> - Jobs are auto-matched to the
-              right resume
-            </li>
-            <li>
-              <strong>60% match threshold</strong> - Only relevant jobs are
-              scraped
-            </li>
-            <li>
-              <strong>Get match scores</strong> - See percentage match for each
-              job
-            </li>
-          </ol>
-        </div>
+    <!-- Active Profiles List -->
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+        <h4 class="fw-bold mb-0">Mis Perfiles Activos</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="loadAllProfiles()">
+          <i class="bi bi-arrow-clockwise"></i>
+        </button>
       </div>
-
-      <div class="card shadow mt-3">
-        <div class="card-header bg-warning text-dark">
-          <h5 class="mb-0">
-            <i class="bi bi-bar-chart"></i> Current Status
-          </h5>
-        </div>
-        <div class="card-body">
-          <div id="profile-summary">
-            <div class="mb-2">
-              <strong>Total Profiles:</strong>
-              <span id="total-profiles" class="badge bg-primary float-end">
-                0
-              </span>
-            </div>
-            <div class="mb-2">
-              <strong>Data Analyst:</strong>
-              <span id="status-analyst" class="badge bg-secondary float-end">
-                Not uploaded
-              </span>
-            </div>
-            <div class="mb-2">
-              <strong>Data Engineer:</strong>
-              <span id="status-engineer" class="badge bg-secondary float-end">
-                Not uploaded
-              </span>
-            </div>
-            <div class="mb-2">
-              <strong>Data Scientist:</strong>
-              <span id="status-scientist" class="badge bg-secondary float-end">
-                Not uploaded
-              </span>
-            </div>
-            <div class="mb-2">
-              <strong>AI/ML Engineer:</strong>
-              <span id="status-ai" class="badge bg-secondary float-end">
-                Not uploaded
-              </span>
-            </div>
-            <div class="mb-2">
-              <strong>Otros:</strong>
-              <span id="status-other" class="badge bg-secondary float-end">
-                Not uploaded
-              </span>
-            </div>
+      <div class="card-body p-0">
+        <div id="profilesContainer">
+          <div class="text-center py-5">
+            <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+            <div class="small text-muted">Cargando perfiles...</div>
           </div>
         </div>
       </div>
@@ -182,40 +181,224 @@
   </div>
 </div>
 
+<style>
+  /* Drag & Drop Zone */
+  .drop-zone {
+    border: 3px dashed #e5e7eb;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    background: #f9fafb;
+  }
+
+  .drop-zone:hover {
+    border-color: #4f46e5;
+    background: #eef2ff;
+  }
+
+  .drop-zone.dragover {
+    border-color: #4f46e5;
+    background: #eef2ff;
+    transform: scale(1.02);
+  }
+
+  .drop-zone-content {
+    pointer-events: none;
+  }
+
+  .file-preview {
+    padding: 1.5rem;
+    background: white;
+    border-radius: 12px;
+  }
+
+  .file-icon {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fee2e2;
+    border-radius: 12px;
+  }
+
+  /* Profile Cards */
+  .profile-card {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    transition: all 0.2s ease;
+  }
+
+  .profile-card:hover {
+    background: #f9fafb;
+  }
+
+  .profile-card:last-child {
+    border-bottom: none;
+  }
+
+  .skill-badge {
+    display: inline-block;
+    padding: 0.375rem 0.75rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 6px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    margin: 0.25rem;
+  }
+
+  /* Progress Circle Animation */
+  @keyframes fillCircle {
+    from {
+      stroke-dashoffset: 339.292;
+    }
+
+    to {
+      stroke-dashoffset: var(--progress-offset);
+    }
+  }
+
+  /* Smooth Transitions */
+  .fade-in {
+    animation: fadeIn 0.5s ease-in;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+</style>
+
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     loadAllProfiles();
+    setupDragAndDrop();
   });
+
+  function setupDragAndDrop() {
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('resume');
+
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+    });
+
+    dropZone.addEventListener('drop', handleDrop, false);
+    fileInput.addEventListener('change', handleFileSelect, false);
+  }
+
+  function handleDrop(e) {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    document.getElementById('resume').files = files;
+    handleFileSelect({ target: { files } });
+  }
+
+  function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const dropZoneContent = document.getElementById('dropZoneContent');
+    const filePreview = document.getElementById('filePreview');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+
+    dropZoneContent.style.display = 'none';
+    filePreview.style.display = 'block';
+
+    fileName.textContent = file.name;
+    fileSize.textContent = formatFileSize(file.size);
+
+    // Update icon based on file type
+    const icon = filePreview.querySelector('.file-icon i');
+    if (file.name.endsWith('.pdf')) {
+      icon.className = 'bi bi-file-earmark-pdf-fill fs-1 text-danger';
+    } else if (file.name.endsWith('.docx')) {
+      icon.className = 'bi bi-file-earmark-word-fill fs-1 text-primary';
+    } else {
+      icon.className = 'bi bi-file-earmark-text-fill fs-1 text-secondary';
+    }
+  }
+
+  function removeFile() {
+    document.getElementById('resume').value = '';
+    document.getElementById('dropZoneContent').style.display = 'block';
+    document.getElementById('filePreview').style.display = 'none';
+  }
+
+  function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
 
   function loadAllProfiles() {
     fetch("/api/all_profiles")
       .then((response) => response.json())
       .then((data) => {
-        updateProfilesTable(data.profiles);
+        updateProfilesDisplay(data.profiles);
         updateStatusSummary(data.profiles);
+        updateProgressCircle(data.profiles);
       })
       .catch((error) => {
         console.error("Error loading profiles:", error);
-        document.getElementById("profiles-table-body").innerHTML = `
-          <tr>
-            <td colspan="6" class="text-center text-muted">
-              No resumes uploaded yet. Upload your first resume above!
-            </td>
-          </tr>
+        document.getElementById("profilesContainer").innerHTML = `
+          <div class="text-center py-5 text-muted">
+            <i class="bi bi-exclamation-circle fs-4 d-block mb-2"></i>
+            Error al cargar perfiles.
+          </div>
         `;
       });
   }
 
-  function updateProfilesTable(profiles) {
-    const tableBody = document.getElementById("profiles-table-body");
+  function updateProgressCircle(profiles) {
+    const total = 5; // Total possible profiles
+    const active = Object.keys(profiles).length;
+    const percentage = (active / total) * 100;
+    const circumference = 339.292;
+    const offset = circumference - (percentage / 100) * circumference;
+
+    const circle = document.getElementById('progressCircle');
+    circle.style.strokeDashoffset = offset;
+  }
+
+  function updateProfilesDisplay(profiles) {
+    const container = document.getElementById("profilesContainer");
 
     if (Object.keys(profiles).length === 0) {
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="6" class="text-center text-muted">
-            <i class="bi bi-inbox"></i> No resumes uploaded yet. Upload your first resume above!
-          </td>
-        </tr>
+      container.innerHTML = `
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-folder2-open fs-1 d-block mb-3 opacity-50"></i>
+          <h6 class="fw-bold">No hay perfiles cargados</h6>
+          <p class="small mb-0">¡Sube tu primer CV arriba!</p>
+        </div>
       `;
       return;
     }
@@ -236,45 +419,69 @@
       other: "Otros",
     };
 
-    tableBody.innerHTML = "";
+    container.innerHTML = "";
 
     for (const [roleType, profile] of Object.entries(profiles)) {
-      const row = document.createElement("tr");
-
-      const uploadDate = new Date(profile.upload_date).toLocaleDateString();
+      const uploadDate = new Date(profile.upload_date).toLocaleDateString('es-AR', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+      });
       const skillsCount = profile.skills ? profile.skills.length : 0;
-      const experience = profile.experience_years || "N/A";
-      const resumeFilename = profile.resume_filename || "Unknown";
+      const resumeFilename = profile.resume_filename || "Desconocido";
 
-      row.innerHTML = `
-        <td>
-          <span class="badge bg-info">
-            ${roleIcons[roleType] || "📄"} ${roleNames[roleType] || roleType}
-          </span>
-        </td>
-        <td>
-          <small>${resumeFilename.substring(0, 30)}...</small>
-        </td>
-        <td>${skillsCount} skills</td>
-        <td>${experience} years</td>
-        <td>${uploadDate}</td>
-        <td>
-          <a href="/view_profile/${roleType}" class="btn btn-sm btn-primary me-1">
-            <i class="bi bi-eye"></i> View
-          </a>
-          <a href="/delete_profile/${roleType}" class="btn btn-sm btn-danger">
-            <i class="bi bi-trash"></i> Delete
-          </a>
-        </td>
+      const card = document.createElement('div');
+      card.className = 'profile-card fade-in';
+      card.innerHTML = `
+        <div class="d-flex align-items-start justify-content-between">
+          <div class="d-flex align-items-start gap-3 flex-grow-1">
+            <div class="rounded p-3 bg-light fs-1">${roleIcons[roleType] || "📄"}</div>
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <h5 class="fw-bold mb-0">${roleNames[roleType] || roleType}</h5>
+                <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">
+                  <i class="bi bi-check-circle me-1"></i>Activo
+                </span>
+              </div>
+              <div class="small text-muted mb-2">
+                <i class="bi bi-paperclip me-1"></i>${resumeFilename.substring(0, 40)}${resumeFilename.length > 40 ? '...' : ''}
+              </div>
+              <div class="small text-muted mb-3">
+                <i class="bi bi-calendar me-1"></i>Subido: ${uploadDate}
+              </div>
+              ${profile.skills && profile.skills.length > 0 ? `
+              <div class="mb-2">
+                <div class="small fw-bold text-muted mb-2">Habilidades detectadas:</div>
+                <div class="d-flex flex-wrap gap-1">
+                  ${profile.skills.slice(0, 8).map(skill => `
+                    <span class="skill-badge">${skill}</span>
+                  `).join('')}
+                  ${profile.skills.length > 8 ? `
+                    <span class="badge bg-light text-dark border">+${profile.skills.length - 8} más</span>
+                  ` : ''}
+                </div>
+              </div>
+              ` : ''}
+            </div>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="/view_profile/${roleType}" class="btn btn-sm btn-outline-primary" title="Ver Detalles">
+              <i class="bi bi-eye"></i>
+            </a>
+            <a href="/delete_profile/${roleType}" class="btn btn-sm btn-outline-danger" 
+               title="Eliminar" onclick="return confirm('¿Eliminar este perfil?')">
+              <i class="bi bi-trash"></i>
+            </a>
+          </div>
+        </div>
       `;
 
-      tableBody.appendChild(row);
+      container.appendChild(card);
     }
   }
 
   function updateStatusSummary(profiles) {
-    document.getElementById("total-profiles").textContent =
-      Object.keys(profiles).length;
+    document.getElementById("total-profiles").textContent = Object.keys(profiles).length;
 
     const roleKeys = {
       data_analyst: "status-analyst",
@@ -286,12 +493,16 @@
 
     for (const [roleType, elementId] of Object.entries(roleKeys)) {
       const statusElement = document.getElementById(elementId);
-      if (profiles[roleType]) {
-        statusElement.textContent = "✓ Uploaded";
-        statusElement.className = "badge bg-success float-end";
-      } else {
-        statusElement.textContent = "Not uploaded";
-        statusElement.className = "badge bg-secondary float-end";
+      if (statusElement) {
+        if (profiles[roleType]) {
+          statusElement.textContent = "Activo";
+          statusElement.className = "badge bg-success bg-opacity-10 text-success border border-success border-opacity-25";
+          statusElement.innerHTML = '<i class="bi bi-check-circle me-1"></i> Activo';
+        } else {
+          statusElement.textContent = "Pendiente";
+          statusElement.className = "badge bg-light text-muted border";
+          statusElement.innerHTML = 'Pendiente';
+        }
       }
     }
   }

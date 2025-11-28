@@ -1,6 +1,7 @@
 <!-- job_scraper_app/templates/base.html -->
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,7 +9,9 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navbar_premium.css') }}">
 </head>
+
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
@@ -21,13 +24,13 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link" href="/">Home</a>
+                        <a class="nav-link" href="/">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/scraper">Scrape Jobs</a>
+                        <a class="nav-link" href="/scraper">Buscar Empleos</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/results">Results</a>
+                        <a class="nav-link" href="/results">Resultados</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/tracker">
@@ -35,10 +38,10 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/profile">Profile</a>
+                        <a class="nav-link" href="/profile">Perfil</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/connections">Connections</a>
+                        <a class="nav-link" href="/connections">Conexiones</a>
                     </li>
                 </ul>
             </div>
@@ -47,14 +50,14 @@
 
     <div class="container mt-4">
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+        {% for category, message in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
@@ -64,4 +67,5 @@
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
+
 </html>

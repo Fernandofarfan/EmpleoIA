@@ -2,91 +2,128 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2 class="mb-4">Solicitudes de Conexión de LinkedIn</h2>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/connections_premium.css') }}">
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4 shadow">
-            <div class="card-header bg-success text-white">
-                <h4 class="mb-0"><i class="bi bi-building"></i> Lista de Empresas</h4>
-            </div>
-            <div class="card-body">
-                {% if empresas %}
-                <div class="list-group">
-                    {% for company in empresas %}
-                    <div class="list-group-item">{{ company }}</div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <div class="alert alert-info">
-                    No se extrajeron empresas todavía. Usá el botón "Extraer Empresas" en la página de Resultados.
-                </div>
-                {% endif %}
-            </div>
+<div class="container-fluid px-4 mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-dark mb-1">Networking Automático</h2>
+            <p class="text-muted mb-0">Conecta con profesionales en empresas de interés</p>
         </div>
+        <a href="/results" class="btn btn-outline-primary">
+            <i class="bi bi-building me-1"></i> Extraer más empresas
+        </a>
     </div>
 
-    <div class="col-md-6">
-        <div class="card mb-4 shadow">
-            <div class="card-header bg-danger text-white">
-                <h4 class="mb-0"><i class="bi bi-people"></i> Solicitudes de Conexión</h4>
-            </div>
-            <div class="card-body">
-                <div class="job-status-container mb-3">
-                    <div id="connection-status-box">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span><strong>Estado:</strong> <span id="connection-status">Inactivo</span></span>
-                        </div>
-                        <div class="progress mb-2">
-                            <div id="connection-progress" class="progress-bar bg-danger" role="progressbar"
-                                style="width: 0%"></div>
-                        </div>
-                        <p id="connection-message" class="small text-muted"></p>
-                    </div>
+    <div class="row g-4">
+        <!-- Company List Column -->
+        <div class="col-md-5 col-lg-4">
+            <div class="card h-100">
+                <div class="card-header pt-4 px-4 pb-2">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-building me-2 text-primary"></i> Empresas Objetivo</h5>
+                    <p class="text-muted small mt-1 mb-0">Extraídas de tus ofertas guardadas</p>
                 </div>
-
-                <form id="connection-form" action="/start_connection_requests" method="post">
-                    <div class="mb-3">
-                        <label for="linkedin_token" class="form-label">Token de Autenticación de LinkedIn
-                            (li_at)</label>
-                        <input type="text" class="form-control" id="linkedin_token" name="linkedin_token" required>
-                        <div class="form-text">La cookie li_at de tu cuenta de LinkedIn</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label for="message_template" class="form-label">Plantilla de Mensaje de Conexión</label>
-                        <textarea class="form-control" id="message_template" name="message_template"
-                            rows="3">¡Hola! Vi que trabajás en {company}. Soy ingeniero de software y me interesa saber más sobre tu experiencia. ¡Me encantaría conectar!</textarea>
-                        <div class="form-text">Usá {company} como marcador para el nombre de la empresa</div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label">Seleccionar Empresas</label>
-                        {% if empresas %}
-                        <div class="form-check-container" style="max-height: 200px; overflow-y: auto;">
-                            {% for company in empresas %}
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" name="company_selection"
-                                    value="{{ company }}" id="company_{{ loop.index }}" checked>
-                                <label class="form-check-label" for="company_{{ loop.index }}">
-                                    {{ company }}
-                                </label>
+                <div class="card-body p-0">
+                    {% if empresas %}
+                    <div class="list-group list-group-flush border-top">
+                        {% for company in empresas %}
+                        <div class="list-group-item px-4 py-3 d-flex align-items-center">
+                            <div class="bg-light rounded p-2 me-3 text-primary">
+                                <i class="bi bi-briefcase"></i>
                             </div>
-                            {% endfor %}
+                            <span class="fw-medium text-dark">{{ company }}</span>
                         </div>
-                        {% else %}
-                        <div class="alert alert-info">
-                            No se extrajeron empresas todavía. Usá el botón "Extraer Empresas" en la página de
-                            Resultados.
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="p-5 text-center">
+                        <div class="mb-3 text-muted opacity-50">
+                            <i class="bi bi-building-slash" style="font-size: 3rem;"></i>
                         </div>
-                        {% endif %}
+                        <p class="text-muted small mb-3">No hay empresas extraídas.</p>
+                        <a href="/results" class="btn btn-sm btn-primary">Ir a Resultados</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Connection Request Form Column -->
+        <div class="col-md-7 col-lg-8">
+            <div class="card h-100">
+                <div class="card-header pt-4 px-4 pb-2">
+                    <h5 class="fw-bold mb-0"><i class="bi bi-send me-2 text-danger"></i> Enviar Solicitudes</h5>
+                    <p class="text-muted small mt-1 mb-0">Configura y envía conexiones masivas en LinkedIn</p>
+                </div>
+                <div class="card-body p-4">
+                    <!-- Status Box -->
+                    <div class="status-box p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="small fw-bold text-uppercase text-muted">Estado Actual</span>
+                            <span id="connection-status" class="badge bg-secondary">Inactivo</span>
+                        </div>
+                        <div class="progress mb-2" style="height: 10px;">
+                            <div id="connection-progress" class="progress-bar" role="progressbar" style="width: 0%">
+                            </div>
+                        </div>
+                        <p id="connection-message" class="small text-muted mb-0 fst-italic text-truncate mt-2"></p>
                     </div>
 
-                    <button type="submit" class="btn btn-danger" id="connection-submit-btn" {% if not empresas
-                        %}disabled{% endif %}>
-                        <i class="bi bi-send"></i> Iniciar Solicitudes de Conexión
-                    </button>
-                </form>
+                    <form id="connection-form" action="/start_connection_requests" method="post">
+                        <div class="mb-4">
+                            <label for="linkedin_token" class="form-label small fw-bold text-muted">Token LinkedIn
+                                (li_at)</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                <input type="password" class="form-control" id="linkedin_token" name="linkedin_token"
+                                    required placeholder="Pega tu cookie li_at aquí">
+                            </div>
+                            <div class="form-text small mt-2"><i class="bi bi-info-circle me-1"></i> Necesario para
+                                autenticar la sesión.</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="message_template" class="form-label small fw-bold text-muted">Mensaje de
+                                Conexión</label>
+                            <textarea class="form-control" id="message_template" name="message_template" rows="4"
+                                style="resize: none;">¡Hola! Vi que trabajás en {company}. Soy ingeniero de software y me interesa saber más sobre tu experiencia. ¡Me encantaría conectar!</textarea>
+                            <div class="form-text small mt-2">
+                                <span class="badge bg-light text-dark border me-1">{company}</span> se reemplazará
+                                automáticamente por el nombre de la empresa.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted mb-3">Seleccionar Empresas</label>
+                            {% if empresas %}
+                            <div class="border rounded p-3 bg-white" style="max-height: 250px; overflow-y: auto;">
+                                {% for company in empresas %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="company_selection"
+                                        value="{{ company }}" id="company_{{ loop.index }}" checked>
+                                    <label class="form-check-label ms-2" for="company_{{ loop.index }}">
+                                        {{ company }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <div
+                                class="alert alert-warning small mb-0 border-0 bg-warning bg-opacity-10 text-warning-emphasis">
+                                <i class="bi bi-exclamation-triangle me-2"></i> Primero debes extraer empresas desde la
+                                página de Resultados.
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-danger py-3" id="connection-submit-btn" {% if not
+                                empresas %}disabled{% endif %}>
+                                <i class="bi bi-people-fill me-2"></i> Iniciar Networking Automático
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -96,7 +133,6 @@
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Start polling for status updates
         pollConnectionStatus();
     });
 
@@ -105,13 +141,11 @@
             .then(response => response.json())
             .then(data => {
                 updateConnectionStatusUI(data.connection_requests);
-
-                // Poll again in 2 seconds
                 setTimeout(pollConnectionStatus, 2000);
             })
             .catch(error => {
                 console.error('Error al verificar estado:', error);
-                setTimeout(pollConnectionStatus, 5000);  // Try again after 5 seconds
+                setTimeout(pollConnectionStatus, 5000);
             });
     }
 
@@ -120,8 +154,8 @@
         const progressElem = document.getElementById('connection-progress');
         const messageElem = document.getElementById('connection-message');
 
-        // Update status text and color
-        // Update status text and color
+        if (!jobData) return;
+
         const statusTranslations = {
             'idle': 'Inactivo',
             'running': 'Ejecutando',
@@ -131,28 +165,24 @@
         const statusText = statusTranslations[jobData.status] || jobData.status;
 
         statusElem.textContent = statusText.charAt(0).toUpperCase() + statusText.slice(1);
-        statusElem.className = '';
+        statusElem.className = 'badge';
 
         if (jobData.status === 'running') {
-            statusElem.classList.add('text-primary');
+            statusElem.classList.add('bg-primary', 'animate-pulse');
             progressElem.classList.add('progress-bar-striped', 'progress-bar-animated');
         } else if (jobData.status === 'completed') {
-            statusElem.classList.add('text-success');
+            statusElem.classList.add('bg-success');
             progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
         } else if (jobData.status === 'failed') {
-            statusElem.classList.add('text-danger');
+            statusElem.classList.add('bg-danger');
             progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
         } else {
-            // Idle
-            statusElem.classList.add('text-muted');
+            statusElem.classList.add('bg-secondary');
             progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
         }
 
-        // Update progress bar
         progressElem.style.width = `${jobData.progress}%`;
         progressElem.setAttribute('aria-valuenow', jobData.progress);
-
-        // Update message
         messageElem.textContent = jobData.message;
     }
 </script>

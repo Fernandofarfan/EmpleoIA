@@ -1,0 +1,272 @@
+/* ========== PREMIUM RESULTS PAGE STYLES ========== */
+
+/* Page Header */
+h2 {
+    color: #1f2937;
+    font-weight: 700;
+    animation: fadeInDown 0.6s ease-out;
+}
+
+.text-muted {
+    color: #6b7280 !important;
+}
+
+/* Button Nueva Búsqueda */
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 0.625rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+/* File Cards */
+.file-card {
+    border-radius: 16px;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: fadeInUp 0.6s ease-out both;
+    background: white;
+}
+
+.file-card:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.file-card:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.file-card:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.file-card:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.file-card:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.file-card:nth-child(6) {
+    animation-delay: 0.6s;
+}
+
+.file-card:hover {
+    border-color: #3b82f6;
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.card-body {
+    padding: 2rem;
+}
+
+/* File Icon */
+.file-icon-wrapper {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.file-card:hover .file-icon-wrapper {
+    transform: scale(1.1) rotate(5deg);
+    background: linear-gradient(135deg, #a7f3d0 0%, #6ee7b7 100%);
+}
+
+.file-icon {
+    font-size: 3rem;
+    color: #059669;
+}
+
+/* Card Title */
+.card-title {
+    font-weight: 700;
+    color: #1f2937;
+    font-size: 1rem;
+    word-break: break-word;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 10px;
+    padding: 0.625rem 1.25rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-primary {
+    border: 2px solid #3b82f6;
+    color: #3b82f6;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border-color: transparent;
+    color: white;
+    transform: translateY(-2px);
+}
+
+.btn-outline-secondary {
+    border: 2px solid #6b7280;
+    color: #4b5563;
+}
+
+.btn-outline-secondary:hover {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    border-color: transparent;
+    color: white;
+}
+
+/* Dropdown */
+.dropdown-menu {
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    padding: 0.5rem;
+}
+
+.dropdown-header {
+    color: #6b7280;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.5rem 1rem;
+}
+
+.dropdown-item {
+    border-radius: 8px;
+    padding: 0.625rem 1rem;
+    transition: all 0.2s ease;
+    font-weight: 500;
+}
+
+.dropdown-item:hover {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    transform: translateX(4px);
+}
+
+.dropdown-item.text-danger:hover {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #dc2626 !important;
+}
+
+.dropdown-divider {
+    border-top: 2px solid #e5e7eb;
+    margin: 0.5rem 0;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    animation: fadeIn 0.8s ease-out;
+}
+
+.empty-icon {
+    font-size: 6rem;
+    color: #d1d5db;
+    margin-bottom: 2rem;
+}
+
+.empty-state h3 {
+    color: #4b5563;
+    font-weight: 700;
+}
+
+.empty-state .btn-lg {
+    padding: 0.875rem 2rem;
+    font-size: 1.125rem;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .file-icon-wrapper {
+        width: 60px;
+        height: 60px;
+    }
+
+    .file-icon {
+        font-size: 2rem;
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+    }
+}
+
+/* Icon Colors */
+.text-primary {
+    color: #3b82f6 !important;
+}
+
+.text-success {
+    color: #10b981 !important;
+}
+
+.text-warning {
+    color: #f59e0b !important;
+}
+
+.text-danger {
+    color: #ef4444 !important;
+}

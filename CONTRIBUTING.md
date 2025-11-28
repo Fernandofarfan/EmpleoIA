@@ -209,22 +209,93 @@ Si tu contribución agrega o modifica funcionalidad:
 Algunas áreas donde podés contribuir:
 
 ### 🔴 Alta Prioridad
-- Mejorar detección anti-bot en scrapers
-- Agregar más plataformas de scraping (Glassdoor, ZipRecruiter)
-- Optimizar performance de base de datos
-- Agregar tests unitarios
+
+#### Backend & Scrapers
+- **Rate Limiting Inteligente**: Implementar sistema de rate limiting adaptativo para APIs (especialmente Gemini)
+- **Caché de Resultados**: Sistema de caché para resultados de scraping y análisis de IA
+- **Tests Unitarios**: Agregar tests para scrapers, parsers y rutas de Flask
+- **Manejo de Errores**: Mejorar logging y recuperación de errores en scrapers
+- **Async Processing**: Implementar procesamiento asíncrono para scraping de múltiples plataformas
+
+#### Features Nuevos
+- **Sistema de Notificaciones**: Alertas por email cuando aparecen nuevos trabajos que coinciden con el perfil
+- **Exportación Avanzada**: Exportar resultados a PDF, Excel con formato profesional
+- **Análisis de Mercado**: Dashboard con estadísticas de salarios, demanda de skills, etc.
+- **Scraping de Más Plataformas**: Glassdoor, ZipRecruiter, Monster, CareerBuilder
 
 ### 🟡 Media Prioridad
-- Mejorar UI/UX del frontend
-- Agregar soporte para más idiomas
-- Implementar sistema de notificaciones
-- Agregar analytics de búsqueda
+
+#### UI/UX
+- **Modo Offline**: Permitir búsquedas y visualización de resultados guardados sin conexión
+- **Filtros Avanzados**: Más opciones de filtrado (rango salarial, tipo de contrato, modalidad remota)
+- **Gráficos y Visualizaciones**: Charts para análisis de tendencias de empleo
+- **Responsive Mobile**: Mejorar experiencia en dispositivos móviles
+- **Temas Personalizables**: Más opciones de personalización de colores y estilos
+
+#### Optimización
+- **Performance de Base de Datos**: Índices, queries optimizadas, connection pooling mejorado
+- **Lazy Loading**: Carga diferida de resultados en tablas grandes
+- **Compresión de Datos**: Reducir tamaño de CSVs y archivos generados
+- **PWA**: Convertir en Progressive Web App para instalación en dispositivos
 
 ### 🟢 Baja Prioridad
-- Mejorar documentación
-- Agregar más ejemplos
-- Refactorizar código legacy
-- Optimizar imports
+
+#### Documentación
+- **Video Tutoriales**: Crear videos de cómo usar cada funcionalidad
+- **API Documentation**: Documentar endpoints si se expone una API REST
+- **Ejemplos de Uso**: Más casos de uso y ejemplos prácticos
+- **Traducción**: Soporte multiidioma (inglés, portugués)
+
+#### Refactoring
+- **Modularización**: Separar lógica de negocio de rutas de Flask
+- **Type Hints**: Agregar type hints completos en todo el código Python
+- **Code Quality**: Implementar linters (pylint, flake8, black)
+- **Arquitectura**: Migrar a arquitectura más escalable (microservicios, API REST)
+
+### 🆕 Ideas Innovadoras
+
+#### IA y Machine Learning
+- **Predicción de Éxito**: ML para predecir probabilidad de conseguir entrevista
+- **Recomendación de Skills**: Sugerir skills para aprender basado en tendencias del mercado
+- **Análisis de Sentimientos**: Analizar descripciones de trabajo para detectar cultura empresarial
+- **CV Scoring**: Puntuar CVs automáticamente y sugerir mejoras específicas
+
+#### Integración
+- **LinkedIn API Oficial**: Migrar de scraping a API oficial (si es viable)
+- **Integración con Calendarios**: Sincronizar entrevistas con Google Calendar/Outlook
+- **Slack/Discord Bots**: Notificaciones en tiempo real en canales de trabajo
+- **GitHub Integration**: Mostrar proyectos de GitHub en el perfil
+
+#### Gamificación
+- **Sistema de Logros**: Badges por cantidad de postulaciones, entrevistas, etc.
+- **Estadísticas Personales**: Dashboard con métricas de progreso en búsqueda laboral
+- **Comparación Anónima**: Ver cómo te comparás con otros usuarios (anónimamente)
+
+## 📊 Roadmap 2025
+
+### Q1 2025
+- [ ] Sistema de notificaciones por email
+- [ ] Tests unitarios completos (>80% coverage)
+- [ ] CI/CD con GitHub Actions
+- [ ] Docker support completo
+
+### Q2 2025
+- [ ] Scraping de 2+ plataformas nuevas
+- [ ] Dashboard de analytics
+- [ ] Modo offline
+- [ ] API REST pública
+
+### Q3 2025
+- [ ] Mobile app (React Native o Flutter)
+- [ ] ML para predicción de éxito
+- [ ] Integración con calendarios
+- [ ] Sistema de recomendación de skills
+
+### Q4 2025
+- [ ] Multiidioma completo
+- [ ] PWA con instalación
+- [ ] Integración con LinkedIn API oficial
+- [ ] Marketplace de templates de CV
 
 ## 💬 Preguntas
 

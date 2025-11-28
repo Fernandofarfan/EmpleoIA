@@ -2,72 +2,88 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h2 class="mb-4">Buscar Empleos</h2>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/scraper_premium.css') }}">
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h2 class="fw-bold text-dark mb-0">Buscar Empleos</h2>
+  <span class="badge bg-light text-dark border">v1.2.0</span>
+</div>
 
 <!-- Resume Upload Notice -->
-<div class="alert alert-info mb-4">
+<div class="alert alert-custom mb-5">
   <div class="d-flex align-items-center">
-    <i class="bi bi-info-circle me-2"></i>
+    <div class="fs-1 text-primary me-3">
+      <i class="bi bi-file-earmark-person"></i>
+    </div>
     <div>
-      <strong>¡Antes de buscar empleos, cargá tu currículum para optimización con IA!</strong>
-      <br>
-      <small class="text-muted">Andá a la página de <a href="/profile" class="alert-link">Perfil</a> para cargar tu CV.
-        Esto habilita la optimización con IA para cada empleo que extraigas.</small>
+      <h5 class="alert-heading fw-bold mb-1">¡Optimizá tu búsqueda con IA!</h5>
+      <p class="mb-0 text-muted">
+        Cargá tu currículum en tu <a href="/profile" class="fw-bold text-primary text-decoration-none">Perfil</a> para
+        habilitar la optimización automática.
+        La IA analizará cada oferta y adaptará tu CV para aumentar tus chances.
+      </p>
     </div>
   </div>
 </div>
 
-
 <!-- Universal Scraper - Search All Platforms -->
-<div class="row mb-4">
+<div class="row mb-5">
   <div class="col-12">
-    <div class="card shadow border-warning">
-      <div class="card-header bg-gradient text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-        <h3 class="mb-0"><i class="bi bi-globe2"></i> 🚀 Scraper Universal - Buscar en Todas las Plataformas</h3>
-        <small>Ejecuta Indeed, LinkedIn, Computrabajo y Bumeran simultáneamente</small>
+    <div class="card card-universal shadow-lg">
+      <div class="card-header border-0">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h3 class="mb-1"><i class="bi bi-rocket-takeoff-fill me-2"></i> Scraper Universal</h3>
+            <p class="mb-0 opacity-75">Búsqueda simultánea en múltiples plataformas</p>
+          </div>
+          <span
+            class="badge bg-white text-primary bg-opacity-25 border border-white border-opacity-25">Recomendado</span>
+        </div>
       </div>
-      <div class="card-body">
-        <div class="job-status-container mb-3">
+      <div class="card-body p-4">
+        <div class="job-status-container mb-4">
           <div id="universal-status-box">
             <div class="d-flex justify-content-between mb-2">
-              <span><strong>Estado:</strong> <span id="universal-status">Inactivo</span></span>
+              <span class="fw-medium">Estado: <span id="universal-status"
+                  class="badge bg-secondary">Inactivo</span></span>
+              <span id="universal-progress-text" class="fw-bold text-primary">0%</span>
             </div>
-            <div class="progress mb-2" style="height: 25px;">
-              <div id="universal-progress" class="progress-bar progress-bar-striped bg-info" role="progressbar" style="width: 0%">0%</div>
+            <div class="progress mb-3" style="height: 12px;">
+              <div id="universal-progress" class="progress-bar progress-bar-striped bg-primary" role="progressbar"
+                style="width: 0%"></div>
             </div>
-            <p id="universal-message" class="small text-muted"></p>
-            
+            <p id="universal-message" class="small text-muted mb-4 text-center fst-italic"></p>
+
             <!-- Individual scraper status -->
-            <div class="row mt-3" id="universal-scrapers-status">
-              <div class="col-md-3 col-sm-6 mb-2">
-                <div class="card border-primary">
-                  <div class="card-body p-2 text-center">
-                    <small class="text-muted">Indeed</small>
-                    <div><span id="universal-indeed-status" class="badge bg-secondary">Esperando</span></div>
+            <div class="row g-3" id="universal-scrapers-status">
+              <div class="col-md-3 col-6">
+                <div class="mini-card" id="card-universal-indeed">
+                  <div class="d-flex flex-column align-items-center">
+                    <small class="text-muted mb-1 fw-bold">Indeed</small>
+                    <span id="universal-indeed-status" class="badge bg-light text-dark border">Esperando</span>
                   </div>
                 </div>
               </div>
-              <div class="col-md-3 col-sm-6 mb-2">
-                <div class="card border-info">
-                  <div class="card-body p-2 text-center">
-                    <small class="text-muted">LinkedIn</small>
-                    <div><span id="universal-linkedin-status" class="badge bg-secondary">Esperando</span></div>
+              <div class="col-md-3 col-6">
+                <div class="mini-card" id="card-universal-linkedin">
+                  <div class="d-flex flex-column align-items-center">
+                    <small class="text-muted mb-1 fw-bold">LinkedIn</small>
+                    <span id="universal-linkedin-status" class="badge bg-light text-dark border">Esperando</span>
                   </div>
                 </div>
               </div>
-              <div class="col-md-3 col-sm-6 mb-2">
-                <div class="card border-danger">
-                  <div class="card-body p-2 text-center">
-                    <small class="text-muted">Computrabajo</small>
-                    <div><span id="universal-computrabajo-status" class="badge bg-secondary">Esperando</span></div>
+              <div class="col-md-3 col-6">
+                <div class="mini-card" id="card-universal-computrabajo">
+                  <div class="d-flex flex-column align-items-center">
+                    <small class="text-muted mb-1 fw-bold">Computrabajo</small>
+                    <span id="universal-computrabajo-status" class="badge bg-light text-dark border">Esperando</span>
                   </div>
                 </div>
               </div>
-              <div class="col-md-3 col-sm-6 mb-2">
-                <div class="card border-success">
-                  <div class="card-body p-2 text-center">
-                    <small class="text-muted">Bumeran</small>
-                    <div><span id="universal-bumeran-status" class="badge bg-secondary">Esperando</span></div>
+              <div class="col-md-3 col-6">
+                <div class="mini-card" id="card-universal-bumeran">
+                  <div class="d-flex flex-column align-items-center">
+                    <small class="text-muted mb-1 fw-bold">Bumeran</small>
+                    <span id="universal-bumeran-status" class="badge bg-light text-dark border">Esperando</span>
                   </div>
                 </div>
               </div>
@@ -75,20 +91,28 @@
           </div>
         </div>
 
-        <form action="/start_universal_scraper" method="post">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label"><strong>Puesto / Palabras Clave</strong></label>
-              <input type="text" class="form-control form-control-lg" name="position" placeholder="ej. Python Developer" required>
+        <form action="/start_universal_scraper" method="post" class="mt-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Puesto / Palabras Clave</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" class="form-control border-start-0 ps-0" name="position"
+                  placeholder="ej. Python Developer" required>
+              </div>
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label"><strong>Ubicación</strong></label>
-              <input type="text" class="form-control form-control-lg" name="location" placeholder="ej. Buenos Aires, Argentina">
+            <div class="col-md-6">
+              <label class="form-label">Ubicación</label>
+              <div class="input-group">
+                <span class="input-group-text bg-light border-end-0"><i class="bi bi-geo-alt text-muted"></i></span>
+                <input type="text" class="form-control border-start-0 ps-0" name="location"
+                  placeholder="ej. Buenos Aires, Argentina">
+              </div>
             </div>
           </div>
 
-          <button type="submit" class="btn btn-lg w-100 text-white" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <i class="bi bi-rocket-takeoff"></i> Iniciar Búsqueda Universal
+          <button type="submit" class="btn btn-universal w-100 mt-4 py-3 fs-5 shadow-sm">
+            <i class="bi bi-stars me-2"></i> Iniciar Búsqueda Universal
           </button>
         </form>
       </div>
@@ -96,57 +120,63 @@
   </div>
 </div>
 
-<div class="row">
+<h4 class="mb-4 fw-bold text-secondary border-bottom pb-2">Scrapers Individuales</h4>
+
+<div class="row g-4">
   <!-- Indeed Scraper -->
   <div class="col-md-6">
-    <div class="card mb-4 shadow">
-      <div class="card-header bg-primary text-white">
-        <h4 class="mb-0"><i class="bi bi-briefcase"></i> Scraper de Indeed</h4>
+    <div class="card card-indeed h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-briefcase me-2"></i> Indeed</span>
+        <i class="bi bi-arrow-up-right-circle opacity-50"></i>
       </div>
       <div class="card-body">
         <div class="job-status-container mb-3">
           <div id="indeed-status-box">
             <div class="d-flex justify-content-between mb-2">
-              <span><strong>Estado:</strong> <span id="indeed-status">Inactivo</span></span>
+              <span class="small fw-bold text-muted">ESTADO</span>
+              <span id="indeed-status" class="badge bg-light text-dark border">Inactivo</span>
             </div>
-            <div class="progress mb-2">
+            <div class="progress mb-2" style="height: 6px;">
               <div id="indeed-progress" class="progress-bar" role="progressbar" style="width: 0%"></div>
             </div>
-            <p id="indeed-message" class="small text-muted"></p>
+            <p id="indeed-message" class="small text-muted text-truncate"></p>
           </div>
         </div>
 
         <form action="/start_indeed_scraper" method="post">
           <div id="indeed-search-params">
-            <div class="search-row mb-3 p-3 border rounded bg-light position-relative">
+            <div class="search-row mb-3 p-3 bg-light rounded-3 position-relative border border-light">
               <div class="mb-2">
-                <label class="form-label">Puesto / Palabras Clave</label>
-                <input type="text" class="form-control" name="position[]" placeholder="ej. Python Developer" required>
+                <label class="form-label small">Puesto</label>
+                <input type="text" class="form-control form-control-sm" name="position[]"
+                  placeholder="ej. Python Developer" required>
               </div>
               <div class="mb-2">
-                <label class="form-label">Ubicación</label>
-                <input type="text" class="form-control" name="location[]" placeholder="ej. Buenos Aires, Argentina">
+                <label class="form-label small">Ubicación</label>
+                <input type="text" class="form-control form-control-sm" name="location[]"
+                  placeholder="ej. Buenos Aires">
               </div>
               <div class="mb-2">
-                <label class="form-label">Páginas a Escanear</label>
-                <input type="number" class="form-control" name="pages" value="1" min="1" max="5">
+                <label class="form-label small">Páginas</label>
+                <input type="number" class="form-control form-control-sm" name="pages" value="1" min="1" max="5">
               </div>
               <button type="button"
-                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 remove-search"
-                title="Eliminar búsqueda">
-                <i class="bi bi-x"></i>
+                class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 m-1 remove-search text-decoration-none"
+                title="Eliminar">
+                <i class="bi bi-x-lg"></i>
               </button>
             </div>
           </div>
 
           <div class="d-flex justify-content-between mb-3">
             <button type="button" class="btn btn-outline-primary btn-sm" id="add-indeed-search">
-              <i class="bi bi-plus-circle"></i> Agregar Búsqueda
+              <i class="bi bi-plus-lg me-1"></i> Agregar Fila
             </button>
           </div>
 
           <button type="submit" class="btn btn-primary w-100">
-            <i class="bi bi-search"></i> Iniciar Scraper de Indeed
+            <i class="bi bi-search me-2"></i> Buscar en Indeed
           </button>
         </form>
       </div>
@@ -155,118 +185,124 @@
 
   <!-- LinkedIn Scraper -->
   <div class="col-md-6">
-    <div class="card mb-4 shadow">
-      <div class="card-header bg-info text-white">
-        <h4 class="mb-0"><i class="bi bi-linkedin"></i> Scraper de LinkedIn</h4>
+    <div class="card card-linkedin h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-linkedin me-2"></i> LinkedIn</span>
+        <i class="bi bi-arrow-up-right-circle opacity-50"></i>
       </div>
       <div class="card-body">
         <div class="job-status-container mb-3">
           <div id="linkedin-status-box">
             <div class="d-flex justify-content-between mb-2">
-              <span><strong>Estado:</strong> <span id="linkedin-status">Inactivo</span></span>
+              <span class="small fw-bold text-muted">ESTADO</span>
+              <span id="linkedin-status" class="badge bg-light text-dark border">Inactivo</span>
             </div>
-            <div class="progress mb-2">
+            <div class="progress mb-2" style="height: 6px;">
               <div id="linkedin-progress" class="progress-bar bg-info" role="progressbar" style="width: 0%"></div>
             </div>
-            <p id="linkedin-message" class="small text-muted"></p>
+            <p id="linkedin-message" class="small text-muted text-truncate"></p>
           </div>
         </div>
 
         <form action="/start_linkedin_scraper" method="post">
           <div id="linkedin-search-params">
-            <div class="search-row mb-3 p-3 border rounded bg-light position-relative">
+            <div class="search-row mb-3 p-3 bg-light rounded-3 position-relative border border-light">
               <div class="mb-2">
-                <label class="form-label">Puesto / Palabras Clave</label>
-                <input type="text" class="form-control" name="position[]" placeholder="ej. Software Engineer" required>
+                <label class="form-label small">Puesto</label>
+                <input type="text" class="form-control form-control-sm" name="position[]"
+                  placeholder="ej. Software Engineer" required>
               </div>
               <div class="mb-2">
-                <label class="form-label">Ubicación</label>
-                <input type="text" class="form-control" name="location[]" placeholder="ej. Argentina">
+                <label class="form-label small">Ubicación</label>
+                <input type="text" class="form-control form-control-sm" name="location[]" placeholder="ej. Argentina">
               </div>
               <button type="button"
-                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 remove-search"
-                title="Eliminar búsqueda">
-                <i class="bi bi-x"></i>
+                class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 m-1 remove-search text-decoration-none"
+                title="Eliminar">
+                <i class="bi bi-x-lg"></i>
               </button>
             </div>
           </div>
 
           <div class="d-flex justify-content-between mb-3">
             <button type="button" class="btn btn-outline-info btn-sm" id="add-linkedin-search">
-              <i class="bi bi-plus-circle"></i> Agregar Búsqueda
+              <i class="bi bi-plus-lg me-1"></i> Agregar Fila
             </button>
           </div>
 
           <div class="mb-3">
             <button type="button" class="btn btn-outline-secondary btn-sm w-100"
               onclick="toggleFilters('linkedin-filters')" id="toggle-linkedin-filters">
-              Filtros Avanzados
+              <i class="bi bi-sliders me-1"></i> Configuración Avanzada
             </button>
-            <div id="linkedin-filters" class="mt-3 p-3 border rounded" style="display: none;">
-              <div class="mb-2">
-                <label class="form-label">Token de Autenticación de LinkedIn (li_at)</label>
-                <input type="text" class="form-control" name="linkedin_token">
-                <div class="form-text">La cookie li_at es necesaria para acceder a LinkedIn.</div>
+            <div id="linkedin-filters" class="mt-3 p-3 border rounded bg-light" style="display: none;">
+              <div class="mb-0">
+                <label class="form-label small">Token LinkedIn (li_at)</label>
+                <input type="text" class="form-control form-control-sm" name="linkedin_token"
+                  placeholder="Opcional si está en .env">
+                <div class="form-text small">Cookie necesaria para autenticación.</div>
               </div>
             </div>
           </div>
 
           <button type="submit" class="btn btn-info text-white w-100">
-            <i class="bi bi-linkedin"></i> Iniciar Scraper de LinkedIn
+            <i class="bi bi-search me-2"></i> Buscar en LinkedIn
           </button>
         </form>
       </div>
     </div>
   </div>
-</div>
 
-<div class="row">
   <!-- Computrabajo Scraper -->
   <div class="col-md-6">
-    <div class="card mb-4 shadow">
-      <div class="card-header bg-danger text-white">
-        <h4 class="mb-0"><i class="bi bi-briefcase-fill"></i> Scraper de Computrabajo</h4>
+    <div class="card card-computrabajo h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-briefcase-fill me-2"></i> Computrabajo</span>
+        <i class="bi bi-arrow-up-right-circle opacity-50"></i>
       </div>
       <div class="card-body">
         <div class="job-status-container mb-3">
           <div id="computrabajo-status-box">
             <div class="d-flex justify-content-between mb-2">
-              <span><strong>Estado:</strong> <span id="computrabajo-status">Inactivo</span></span>
+              <span class="small fw-bold text-muted">ESTADO</span>
+              <span id="computrabajo-status" class="badge bg-light text-dark border">Inactivo</span>
             </div>
-            <div class="progress mb-2">
+            <div class="progress mb-2" style="height: 6px;">
               <div id="computrabajo-progress" class="progress-bar bg-danger" role="progressbar" style="width: 0%"></div>
             </div>
-            <p id="computrabajo-message" class="small text-muted"></p>
+            <p id="computrabajo-message" class="small text-muted text-truncate"></p>
           </div>
         </div>
 
         <form action="/start_computrabajo_scraper" method="post">
           <div id="computrabajo-search-params">
-            <div class="search-row mb-3 p-3 border rounded bg-light position-relative">
+            <div class="search-row mb-3 p-3 bg-light rounded-3 position-relative border border-light">
               <div class="mb-2">
-                <label class="form-label">Puesto / Palabras Clave</label>
-                <input type="text" class="form-control" name="position[]" placeholder="ej. Python Developer" required>
+                <label class="form-label small">Puesto</label>
+                <input type="text" class="form-control form-control-sm" name="position[]"
+                  placeholder="ej. Python Developer" required>
               </div>
               <div class="mb-2">
-                <label class="form-label">Ubicación</label>
-                <input type="text" class="form-control" name="location[]" placeholder="ej. Buenos Aires">
+                <label class="form-label small">Ubicación</label>
+                <input type="text" class="form-control form-control-sm" name="location[]"
+                  placeholder="ej. Buenos Aires">
               </div>
               <button type="button"
-                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 remove-search"
-                title="Eliminar búsqueda">
-                <i class="bi bi-x"></i>
+                class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 m-1 remove-search text-decoration-none"
+                title="Eliminar">
+                <i class="bi bi-x-lg"></i>
               </button>
             </div>
           </div>
 
           <div class="d-flex justify-content-between mb-3">
             <button type="button" class="btn btn-outline-danger btn-sm" id="add-computrabajo-search">
-              <i class="bi bi-plus-circle"></i> Agregar Búsqueda
+              <i class="bi bi-plus-lg me-1"></i> Agregar Fila
             </button>
           </div>
 
           <button type="submit" class="btn btn-danger w-100">
-            <i class="bi bi-search"></i> Iniciar Scraper de Computrabajo
+            <i class="bi bi-search me-2"></i> Buscar en Computrabajo
           </button>
         </form>
       </div>
@@ -275,50 +311,53 @@
 
   <!-- Bumeran Scraper -->
   <div class="col-md-6">
-    <div class="card mb-4 shadow">
-      <div class="card-header bg-success text-white">
-        <h4 class="mb-0"><i class="bi bi-building"></i> Scraper de Bumeran</h4>
+    <div class="card card-bumeran h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-building me-2"></i> Bumeran</span>
+        <i class="bi bi-arrow-up-right-circle opacity-50"></i>
       </div>
       <div class="card-body">
         <div class="job-status-container mb-3">
           <div id="bumeran-status-box">
             <div class="d-flex justify-content-between mb-2">
-              <span><strong>Estado:</strong> <span id="bumeran-status">Inactivo</span></span>
+              <span class="small fw-bold text-muted">ESTADO</span>
+              <span id="bumeran-status" class="badge bg-light text-dark border">Inactivo</span>
             </div>
-            <div class="progress mb-2">
+            <div class="progress mb-2" style="height: 6px;">
               <div id="bumeran-progress" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
             </div>
-            <p id="bumeran-message" class="small text-muted"></p>
+            <p id="bumeran-message" class="small text-muted text-truncate"></p>
           </div>
         </div>
 
         <form action="/start_bumeran_scraper" method="post">
           <div id="bumeran-search-params">
-            <div class="search-row mb-3 p-3 border rounded bg-light position-relative">
+            <div class="search-row mb-3 p-3 bg-light rounded-3 position-relative border border-light">
               <div class="mb-2">
-                <label class="form-label">Puesto / Palabras Clave</label>
-                <input type="text" class="form-control" name="position[]" placeholder="ej. Data Analyst" required>
+                <label class="form-label small">Puesto</label>
+                <input type="text" class="form-control form-control-sm" name="position[]" placeholder="ej. Data Analyst"
+                  required>
               </div>
               <div class="mb-2">
-                <label class="form-label">Ubicación</label>
-                <input type="text" class="form-control" name="location[]" placeholder="ej. Córdoba">
+                <label class="form-label small">Ubicación</label>
+                <input type="text" class="form-control form-control-sm" name="location[]" placeholder="ej. Córdoba">
               </div>
               <button type="button"
-                class="btn btn-sm btn-outline-danger position-absolute top-0 end-0 m-2 remove-search"
-                title="Eliminar búsqueda">
-                <i class="bi bi-x"></i>
+                class="btn btn-sm btn-link text-danger position-absolute top-0 end-0 m-1 remove-search text-decoration-none"
+                title="Eliminar">
+                <i class="bi bi-x-lg"></i>
               </button>
             </div>
           </div>
 
           <div class="d-flex justify-content-between mb-3">
             <button type="button" class="btn btn-outline-success btn-sm" id="add-bumeran-search">
-              <i class="bi bi-plus-circle"></i> Agregar Búsqueda
+              <i class="bi bi-plus-lg me-1"></i> Agregar Fila
             </button>
           </div>
 
           <button type="submit" class="btn btn-success w-100">
-            <i class="bi bi-search"></i> Iniciar Scraper de Bumeran
+            <i class="bi bi-search me-2"></i> Buscar en Bumeran
           </button>
         </form>
       </div>
@@ -380,10 +419,10 @@
 
     if (filterDiv.style.display === 'none') {
       filterDiv.style.display = 'block';
-      if (button) button.textContent = 'Ocultar Filtros';
+      if (button) button.textContent = 'Ocultar Configuración';
     } else {
       filterDiv.style.display = 'none';
-      if (button) button.textContent = 'Filtros Avanzados';
+      if (button) button.textContent = 'Configuración Avanzada';
     }
   }
 
@@ -397,7 +436,6 @@
         updateStatusUI('bumeran', data.bumeran_scraping);
 
         updateUniversalStatusUI(data.universal_scraping);
-
 
         // Poll again in 2 seconds
         setTimeout(pollStatus, 2000);
@@ -425,20 +463,26 @@
     const statusText = statusTranslations[jobData.status] || jobData.status;
 
     statusElem.textContent = statusText.charAt(0).toUpperCase() + statusText.slice(1);
-    statusElem.className = '';
+
+    // Reset classes
+    statusElem.className = 'badge border';
+    progressElem.className = 'progress-bar';
+    if (prefix === 'linkedin') progressElem.classList.add('bg-info');
+    else if (prefix === 'computrabajo') progressElem.classList.add('bg-danger');
+    else if (prefix === 'bumeran') progressElem.classList.add('bg-success');
 
     if (jobData.status === 'running') {
-      statusElem.classList.add('text-primary');
+      statusElem.classList.add('bg-primary', 'text-white', 'border-primary', 'animate-pulse');
       progressElem.classList.add('progress-bar-striped', 'progress-bar-animated');
     } else if (jobData.status === 'completed') {
-      statusElem.classList.add('text-success');
+      statusElem.classList.add('bg-success', 'text-white', 'border-success');
       progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
     } else if (jobData.status === 'failed') {
-      statusElem.classList.add('text-danger');
+      statusElem.classList.add('bg-danger', 'text-white', 'border-danger');
       progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
     } else {
       // Idle
-      statusElem.classList.add('text-muted');
+      statusElem.classList.add('bg-light', 'text-dark');
       progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
     }
 
@@ -450,13 +494,13 @@
     messageElem.textContent = jobData.message;
   }
 
-
   function updateUniversalStatusUI(jobData) {
     if (!jobData) return;
 
     const statusElem = document.getElementById('universal-status');
     const progressElem = document.getElementById('universal-progress');
     const messageElem = document.getElementById('universal-message');
+    const progressTextElem = document.getElementById('universal-progress-text');
 
     if (!statusElem) return;
 
@@ -470,26 +514,26 @@
     const statusText = statusTranslations[jobData.status] || jobData.status;
 
     statusElem.textContent = statusText.charAt(0).toUpperCase() + statusText.slice(1);
-    statusElem.className = '';
+    statusElem.className = 'badge';
 
     if (jobData.status === 'running') {
-      statusElem.classList.add('text-primary');
+      statusElem.classList.add('bg-primary', 'animate-pulse');
       progressElem.classList.add('progress-bar-striped', 'progress-bar-animated');
     } else if (jobData.status === 'completed') {
-      statusElem.classList.add('text-success');
+      statusElem.classList.add('bg-success');
       progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
     } else if (jobData.status === 'failed') {
-      statusElem.classList.add('text-danger');
+      statusElem.classList.add('bg-danger');
       progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
     } else {
-      statusElem.classList.add('text-muted');
+      statusElem.classList.add('bg-secondary');
       progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
     }
 
     // Update progress bar
     progressElem.style.width = `${jobData.progress}%`;
     progressElem.setAttribute('aria-valuenow', jobData.progress);
-    progressElem.textContent = `${jobData.progress}%`;
+    if (progressTextElem) progressTextElem.textContent = `${jobData.progress}%`;
 
     // Update message
     messageElem.textContent = jobData.message;
@@ -498,28 +542,33 @@
     if (jobData.scrapers) {
       for (const [name, scraperData] of Object.entries(jobData.scrapers)) {
         const badgeElem = document.getElementById(`universal-${name}-status`);
+        const cardElem = document.getElementById(`card-universal-${name}`);
+
         if (badgeElem) {
-          badgeElem.className = 'badge';
+          badgeElem.className = 'badge border';
+          if (cardElem) cardElem.className = 'mini-card';
+
           if (scraperData.status === 'running') {
-            badgeElem.classList.add('bg-primary');
+            badgeElem.classList.add('bg-primary', 'text-white', 'border-primary', 'animate-pulse');
             badgeElem.textContent = 'Ejecutando...';
+            if (cardElem) cardElem.classList.add('active');
           } else if (scraperData.status === 'completed') {
-            badgeElem.classList.add('bg-success');
+            badgeElem.classList.add('bg-success', 'text-white', 'border-success');
             badgeElem.textContent = '✓ Completado';
+            if (cardElem) cardElem.classList.add('completed');
           } else if (scraperData.status === 'failed') {
-            badgeElem.classList.add('bg-danger');
+            badgeElem.classList.add('bg-danger', 'text-white', 'border-danger');
             badgeElem.textContent = '✗ Error';
           } else if (scraperData.status === 'skipped') {
-            badgeElem.classList.add('bg-warning');
+            badgeElem.classList.add('bg-warning', 'text-dark', 'border-warning');
             badgeElem.textContent = 'Omitido';
           } else {
-            badgeElem.classList.add('bg-secondary');
+            badgeElem.classList.add('bg-light', 'text-dark');
             badgeElem.textContent = 'Esperando';
           }
         }
       }
     }
   }
-
 </script>
 {% endblock %}

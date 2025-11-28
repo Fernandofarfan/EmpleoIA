@@ -1,0 +1,320 @@
+/* ========== PREMIUM TRACKER/KANBAN STYLES ========== */
+
+/* Page Header */
+h2 {
+    color: #1f2937;
+    font-weight: 700;
+    animation: fadeInDown 0.6s ease-out;
+}
+
+.text-muted {
+    color: #6b7280 !important;
+}
+
+/* Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 0.625rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #2563eb 0%, #7c3aed 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-outline-success {
+    border: 2px solid #10b981;
+    color: #10b981;
+    border-radius: 10px;
+    padding: 0.625rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-outline-success:hover {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: transparent;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Pipeline Container */
+.pipeline-container {
+    animation: fadeIn 0.6s ease-out;
+}
+
+/* Stage Columns */
+.stage-column {
+    background: white;
+    border-radius: 16px;
+    border: 2px solid #e5e7eb;
+    min-height: 600px;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.6s ease-out both;
+}
+
+.stage-column:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.stage-column:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.stage-column:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.stage-column:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.stage-column:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.stage-column:nth-child(6) {
+    animation-delay: 0.6s;
+}
+
+/* Stage Headers with Gradients */
+.stage-header {
+    padding: 1.25rem;
+    border-radius: 14px 14px 0 0;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.stage-bookmarked .stage-header {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    color: #4b5563;
+}
+
+.stage-applying .stage-header {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+    color: #1e40af;
+}
+
+.stage-applied .stage-header {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+    color: #065f46;
+}
+
+.stage-interviewing .stage-header {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    color: #92400e;
+}
+
+.stage-negotiating .stage-header {
+    background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+    color: #3730a3;
+}
+
+.stage-rejected .stage-header {
+    background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+    color: #991b1b;
+}
+
+/* Stage Body */
+.stage-body {
+    padding: 1rem;
+    flex: 1;
+    overflow-y: auto;
+    min-height: 400px;
+}
+
+/* Job Cards */
+.job-card {
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: move;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.job-card:hover {
+    border-color: #3b82f6;
+    transform: translateY(-4px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.job-card h6 {
+    font-weight: 700;
+    color: #1f2937;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.job-card .company {
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.job-card .location {
+    color: #9ca3af;
+    font-size: 0.8125rem;
+    margin-bottom: 0.75rem;
+}
+
+/* Excitement Stars */
+.excitement-stars {
+    margin: 0.5rem 0;
+}
+
+.excitement-stars i {
+    color: #fbbf24;
+    font-size: 0.875rem;
+    transition: all 0.2s ease;
+}
+
+.excitement-stars i:hover {
+    transform: scale(1.2);
+}
+
+/* Badges */
+.badge {
+    padding: 0.375rem 0.75rem;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+/* Modal Enhancements */
+.modal-content {
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+    border-radius: 16px 16px 0 0;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: 2px solid #e5e7eb;
+    padding: 1.25rem 1.5rem;
+}
+
+/* Form Controls */
+.form-control,
+.form-select {
+    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+/* Scrollbar */
+.stage-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.stage-body::-webkit-scrollbar-track {
+    background: #f3f4f6;
+    border-radius: 3px;
+}
+
+.stage-body::-webkit-scrollbar-thumb {
+    background: #9ca3af;
+    border-radius: 3px;
+}
+
+.stage-body::-webkit-scrollbar-thumb:hover {
+    background: #6b7280;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    .stage-column {
+        min-height: 400px;
+    }
+
+    .stage-header {
+        padding: 1rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* Empty State */
+.stage-body:empty::after {
+    content: "Arrastra trabajos aquí";
+    display: block;
+    text-align: center;
+    color: #d1d5db;
+    padding: 2rem;
+    font-style: italic;
+}
