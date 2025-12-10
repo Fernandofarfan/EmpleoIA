@@ -24,6 +24,24 @@ class BumeranScraper:
         
     def _setup_driver(self):
         """Setup Chrome driver with options"""
+        # Try using a remote Selenium server if provided
+        selenium_url = os.getenv('SELENIUM_URL')
+        if selenium_url:
+            try:
+                chrome_options = Options()
+                chrome_options.add_argument('--disable-blink-features=AutomationControlled')
+                chrome_options.add_argument('--no-sandbox')
+                chrome_options.add_argument('--disable-dev-shm-usage')
+                chrome_options.add_argument('--window-size=1920,1080')
+                chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+                chrome_options.add_experimental_option('useAutomationExtension', False)
+                self.driver = webdriver.Remote(command_executor=selenium_url, options=chrome_options)
+                self.wait = WebDriverWait(self.driver, 20)
+                logger.info(f"Connected to remote Selenium at {selenium_url}")
+                return
+            except Exception as e:
+                logger.warning(f"Failed to connect to remote Selenium: {e}. Falling back to local Chrome.")
+
         try:
             chrome_options = Options()
             chrome_options.add_argument('--disable-blink-features=AutomationControlled')

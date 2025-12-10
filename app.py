@@ -4,6 +4,7 @@ import threading
 import logging
 import glob
 from datetime import datetime
+import time
 
 import pandas as pd
 import random
@@ -61,6 +62,38 @@ job_status = {
     }},
     'connection_requests': {'status': 'idle', 'progress': 0, 'message': ''}
 }
+
+# Simple in-memory task store for running quick test scrapers in background
+test_tasks = {}
+
+# Directory to persist task state so it is visible across Gunicorn workers
+TASK_DIR = os.path.join('temp', 'test_tasks')
+os.makedirs(TASK_DIR, exist_ok=True)
+
+def _task_path(task_id: str) -> str:
+    return os.path.join(TASK_DIR, f"{task_id}.json")
+
+def save_task_to_disk(task_id: str):
+    try:
+        task = test_tasks.get(task_id)
+        if task is None:
+            return
+        with open(_task_path(task_id), 'w', encoding='utf-8') as f:
+            json.dump(task, f, ensure_ascii=False)
+    except Exception:
+        logger.exception(f"Failed to save task {task_id} to disk")
+
+def load_task_from_disk(task_id: str):
+    path = _task_path(task_id)
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception:
+        logger.exception(f"Failed to load task {task_id} from disk")
+        return None
+
 
 def get_recent_job_files():
     csv_files = glob.glob(os.path.join('results', '*.csv'))
@@ -238,7 +271,14 @@ def run_indeed_scraper_with_matching(credentials, searches, filters=None):
         indeed_email = credentials.get('indeed_email')
         indeed_password = credentials.get('indeed_password')
         
-        user_profile = get_user_profile()
+        all_profiles = get_user_profile()
+        user_profile = None
+        if all_profiles:
+            # Clean up potential non-dict entries or empty keys
+            valid_keys = [k for k in all_profiles.keys() if isinstance(all_profiles[k], dict)]
+            if valid_keys:
+                first_role = valid_keys[0]
+                user_profile = all_profiles[first_role]
         
         user_skills = None
         if user_profile and 'resume_path' in user_profile:
@@ -284,7 +324,7 @@ def run_indeed_scraper_with_matching(credentials, searches, filters=None):
                 if filters is None:
                     filters = {}
                 clear_previous = (i == 0)
-                jobs = scraper.search_jobs_with_filters(position, location, filters, clear_previous=clear_previous)
+                jobs = scraper.search_jobs_with_filters(position, location, filters, clear_previous=clear_previous, max_jobs=jobs_per_search)
                 
                 if jobs:
                     new_jobs_count = len(jobs) - (len(all_jobs) - jobs_per_search) if i > 0 else len(jobs)
@@ -379,12 +419,29 @@ def run_linkedin_scraper_with_matching(credentials, searches, filters=None):
         job_status['linkedin_scraping']['message'] = 'Starting LinkedIn scraper...'
         
         linkedin_token = credentials.get('linkedin_token')
+        linkedin_email = credentials.get('linkedin_email')
+        linkedin_password = credentials.get('linkedin_password')
         
-        user_profile = get_user_profile()
+        all_profiles = get_user_profile()
+        user_profile = None
+        if all_profiles:
+            valid_keys = [k for k in all_profiles.keys() if isinstance(all_profiles[k], dict)]
+            if valid_keys:
+                first_role = valid_keys[0]
+                user_profile = all_profiles[first_role]
         
         job_status['linkedin_scraping']['message'] = 'Initializing scraper...'
         try:
-            scraper = linkedinClass(linkedin_token)
+            # Try email/password first, fallback to token
+            if linkedin_email and linkedin_password:
+                scraper = linkedinClass(email=linkedin_email, password=linkedin_password)
+            elif linkedin_token:
+                scraper = linkedinClass(li_at_token=linkedin_token)
+            else:
+                job_status['linkedin_scraping']['status'] = 'failed'
+                job_status['linkedin_scraping']['message'] = 'No LinkedIn credentials provided'
+                job_status['linkedin_scraping']['progress'] = 0
+                return
         except Exception as init_error:
             logger.error(f"Failed to initialize scraper: {init_error}")
             job_status['linkedin_scraping']['status'] = 'failed'
@@ -396,11 +453,16 @@ def run_linkedin_scraper_with_matching(credentials, searches, filters=None):
         job_status['linkedin_scraping']['progress'] = 10
         
         login_success = False
-        max_login_attempts = 3
+        max_login_attempts = 2
         
         for attempt in range(max_login_attempts):
             try:
-                login_success = scraper.login_with_cookie()
+                # Use email/password login if available, otherwise use cookie
+                if linkedin_email and linkedin_password:
+                    login_success = scraper.login_with_credentials()
+                else:
+                    login_success = scraper.login_with_cookie()
+                    
                 if login_success:
                     logger.info("Login successful")
                     break
@@ -1155,11 +1217,18 @@ def start_indeed_scraper():
 
 @app.route('/start_linkedin_scraper', methods=['POST'])
 def start_linkedin_scraper():
+    # Force reload of .env to get latest credentials
+    load_dotenv(override=True)
+    
     linkedin_token = request.form.get('linkedin_token')
     
     # If not provided in form, try to get from environment
     if not linkedin_token:
-        linkedin_token = os.getenv('LINKEDIN_TOKEN')
+        linkedin_token = os.getenv('LI_AT_TOKEN')
+    
+    # Also read email/password from environment
+    linkedin_email = os.getenv('LINKEDIN_EMAIL')
+    linkedin_password = os.getenv('LINKEDIN_PASSWORD')
     
     searches = []
     positions = request.form.getlist('position[]')
@@ -1182,8 +1251,8 @@ def start_linkedin_scraper():
         'has_verifications': request.form.get('has_verifications', 'true') == 'true'
     }
     
-    if not linkedin_token:
-        flash('Please provide LinkedIn authentication token', 'danger')
+    if not linkedin_token and not (linkedin_email and linkedin_password):
+        flash('Please provide LinkedIn credentials (either token or email/password)', 'danger')
         return redirect(url_for('scraper'))
         
     if not searches:
@@ -1199,7 +1268,9 @@ def start_linkedin_scraper():
     thread = threading.Thread(
         target=run_linkedin_scraper_with_matching,
         args=({
-            'linkedin_token': linkedin_token
+            'linkedin_token': linkedin_token,
+            'linkedin_email': linkedin_email,
+            'linkedin_password': linkedin_password
         }, searches, filters)
     )
     thread.daemon = True
@@ -1370,6 +1441,166 @@ def start_bumeran_scraper():
     
     flash('Bumeran scraper started', 'success')
     return redirect(url_for('scraper'))
+
+
+@app.route('/run_test_scraper', methods=['GET'])
+def run_test_scraper():
+    """Run a quick test for a specific scraper and return results as JSON.
+    Example: /run_test_scraper?scraper=bumeran&q=analista&location=Buenos+Aires&max=5
+    """
+    scraper_name = (request.args.get('scraper') or 'bumeran').lower()
+    position = request.args.get('q') or request.args.get('position') or ''
+    location = request.args.get('location', '')
+    try:
+        max_jobs = int(request.args.get('max', 5))
+    except ValueError:
+        max_jobs = 5
+
+    try:
+        if scraper_name == 'bumeran':
+            email = os.getenv('BUMERAN_EMAIL')
+            password = os.getenv('BUMERAN_PASSWORD')
+            scraper = BumeranScraper()
+            jobs = scraper.search_jobs(position, location, max_jobs=max_jobs, email=email, password=password)
+
+        elif scraper_name == 'computrabajo':
+            scraper = ComputrabajoScraper()
+            jobs = scraper.search_jobs(position, location, max_jobs_per_search=max_jobs)
+
+        elif scraper_name == 'indeed':
+            scraper = indeedScraper()
+            jobs = scraper.search_jobs(position, location, max_jobs_per_search=max_jobs)
+
+        elif scraper_name == 'linkedin':
+            # Run LinkedIn scraper in background to avoid worker timeouts
+            li_at = request.args.get('linkedin_token') or os.getenv('LINKEDIN_LI_AT') or os.getenv('LI_AT') or os.getenv('LINKEDIN_TOKEN')
+            if not li_at:
+                return jsonify({'error': 'Please provide LinkedIn authentication token via ?linkedin_token=... or env LINKEDIN_LI_AT/LI_AT'}), 400
+
+            import uuid
+
+            task_id = str(uuid.uuid4())
+            test_tasks[task_id] = {
+                'status': 'queued',
+                'progress': 0,
+                'scraper': 'linkedin',
+                'position': position,
+                'location': location,
+                'max': max_jobs,
+                'result': None,
+                'error': None,
+                'started_at': None,
+                'finished_at': None
+            }
+            # persist initial state
+            save_task_to_disk(task_id)
+
+            def run_linkedin_task(tid, token, position, location, max_jobs):
+                test_tasks[tid]['status'] = 'running'
+                test_tasks[tid]['started_at'] = datetime.now().isoformat()
+                save_task_to_disk(tid)
+                try:
+                    scraper = linkedinClass(token)
+                    try:
+                        test_tasks[tid]['progress'] = 10
+                        save_task_to_disk(tid)
+                        logged = getattr(scraper, 'login_with_cookie', lambda: True)()
+                    except Exception:
+                        logged = False
+                    test_tasks[tid]['progress'] = 30
+                    save_task_to_disk(tid)
+                    jobs = scraper.search_jobs(position, location, max_jobs_per_search=max_jobs)
+                    # normalize jobs
+                    simple_jobs = []
+                    for j in (jobs or [])[:max_jobs]:
+                        if isinstance(j, dict):
+                            simple_jobs.append(j)
+                        else:
+                            try:
+                                simple_jobs.append(j.__dict__)
+                            except Exception:
+                                simple_jobs.append(str(j))
+
+                    test_tasks[tid]['result'] = simple_jobs
+                    test_tasks[tid]['status'] = 'completed'
+                    test_tasks[tid]['progress'] = 100
+                    save_task_to_disk(tid)
+                except Exception as e:
+                    logger.exception(f"Error in background LinkedIn task {tid}: {e}")
+                    test_tasks[tid]['error'] = str(e)[:1000]
+                    test_tasks[tid]['status'] = 'failed'
+                    test_tasks[tid]['progress'] = 0
+                    save_task_to_disk(tid)
+                finally:
+                    test_tasks[tid]['finished_at'] = datetime.now().isoformat()
+                    save_task_to_disk(tid)
+                    try:
+                        close_fn = getattr(scraper, 'close', None)
+                        if callable(close_fn):
+                            close_fn()
+                    except Exception:
+                        pass
+
+            thread = threading.Thread(target=run_linkedin_task, args=(task_id, li_at, position, location, max_jobs))
+            thread.daemon = True
+            thread.start()
+
+            return jsonify({'task_id': task_id, 'status': 'started'}), 202
+
+        else:
+            return jsonify({'error': 'Unknown scraper: ' + scraper_name}), 400
+
+        # Ensure we close the scraper if it offers a close method
+        try:
+            close_fn = getattr(scraper, 'close', None)
+            if callable(close_fn):
+                close_fn()
+        except Exception:
+            pass
+
+        # Truncate job entries to simple serializable structure if needed
+        simple_jobs = []
+        for j in (jobs or [])[:max_jobs]:
+            if isinstance(j, dict):
+                simple_jobs.append(j)
+            else:
+                # Best-effort mapping for objects
+                try:
+                    simple_jobs.append(j.__dict__)
+                except Exception:
+                    simple_jobs.append(str(j))
+
+        return jsonify({'scraper': scraper_name, 'count': len(simple_jobs), 'jobs': simple_jobs})
+
+    except Exception as e:
+        logger.exception(f"Error running test scraper {scraper_name}: {e}")
+        return jsonify({'error': str(e)[:200]}), 500
+
+
+@app.route('/test_task_status', methods=['GET'])
+def test_task_status():
+    """Get status/result for a background test task: /test_task_status?task_id=..."""
+    task_id = request.args.get('task_id')
+    if not task_id:
+        return jsonify({'error': 'task_id is required'}), 400
+
+    task = test_tasks.get(task_id) or load_task_from_disk(task_id)
+    if not task:
+        return jsonify({'error': 'task_id not found'}), 404
+
+    # Return limited fields
+    response = {
+        'task_id': task_id,
+        'status': task.get('status'),
+        'progress': task.get('progress'),
+        'started_at': task.get('started_at'),
+        'finished_at': task.get('finished_at'),
+        'error': task.get('error'),
+        'count': len(task['result']) if task.get('result') else 0,
+        'result': task.get('result') if task.get('status') == 'completed' else None
+    }
+
+    return jsonify(response)
 
 
 
@@ -1861,4 +2092,4 @@ def api_batch_optimize():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', debug=True)

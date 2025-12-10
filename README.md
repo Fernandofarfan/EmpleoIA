@@ -2,15 +2,14 @@
 
 # 🤖 EmpleoIA
 
-### *Plataforma Inteligente de Búsqueda de Empleo con IA*
+### *Plataforma Inteligente de Búsqueda de Empleo*
 
 [![Python Version](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Flask](https://img.shields.io/badge/flask-2.3.3-green.svg)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/license-MIT-orange.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/status-active-success.svg)]()
-[![Gemini AI](https://img.shields.io/badge/AI-Google%20Gemini-4285F4.svg)](https://ai.google.dev/)
 
-*Automatizá tu búsqueda laboral con scraping inteligente y optimización de CVs potenciada por IA*
+*Automatizá tu búsqueda laboral con scraping inteligente y optimización de CVs*
 
 [Características](#-características) •
 [Instalación](#-instalación-rápida) •
@@ -41,12 +40,12 @@
 
 ## 🎯 Descripción
 
-**EmpleoIA** es una plataforma integral de automatización de búsqueda de empleo que combina web scraping inteligente con optimización de currículums potenciada por IA. Diseñada para profesionales que buscan optimizar su proceso de búsqueda laboral.
+**EmpleoIA** es una plataforma integral de automatización de búsqueda de empleo que combina web scraping inteligente con optimización de currículums. Diseñada para profesionales que buscan optimizar su proceso de búsqueda laboral.
 
 ### ¿Qué hace diferente a EmpleoIA?
 
 - ✅ **Scraping sin APIs**: Extrae ofertas de Indeed y LinkedIn sin costos de API
-- ✅ **IA Integrada**: Usa Google Gemini Pro para optimizar CVs con 90%+ de compatibilidad ATS
+- ✅ **Parsing Inteligente**: Sistema de extracción automática de habilidades y matching con 90%+ de compatibilidad ATS
 - ✅ **Gestión Completa**: Desde la búsqueda hasta el seguimiento de postulaciones
 - ✅ **100% en Español**: Interfaz completamente localizada para Argentina/Latinoamérica
 - ✅ **Open Source**: Código abierto y personalizable
@@ -61,7 +60,6 @@
 - Filtrado inteligente por habilidades, ubicación y nivel de experiencia
 - **Extracción Profunda**: Obtención de enlaces directos de postulación ("Apply URL")
 - Exportación a CSV consolidado para análisis posterior
-- Exportación a CSV consolidado para análisis posterior
 - Sistema anti-detección para scraping confiable
 
 ### 🎨 **Experiencia de Usuario (v2.0)**
@@ -69,8 +67,8 @@
 - **⚡ Filtros Dinámicos**: Búsqueda instantánea en resultados
 - **📱 Diseño Responsive**: Interfaz moderna adaptada a todos los dispositivos
 
-### 🤖 **Optimización de CVs con IA**
-- Generación de currículums adaptados usando **Google Gemini Pro**
+### 🤖 **Optimización de CVs**
+- Generación de currículums adaptados con algoritmos avanzados
 - Optimización para sistemas ATS (Applicant Tracking Systems)
 - Análisis de compatibilidad con descripciones de trabajo
 - Procesamiento por lotes para múltiples aplicaciones
@@ -88,7 +86,7 @@
 - Historial de postulaciones
 
 ### 📝 **Generación de Cartas de Presentación**
-- Creación automática con IA
+- Creación automática personalizada
 - Personalización según empresa y puesto
 - Plantillas profesionales
 - Exportación a DOCX
@@ -115,17 +113,12 @@
 <br><sub>Web Scraping</sub>
 </td>
 <td align="center" width="25%">
-<img src="https://ai.google.dev/static/site-assets/images/share.png" width="60px" height="60px" alt="Gemini" />
-<br><strong>Gemini Pro</strong>
-<br><sub>IA Generativa</sub>
-</td>
-</tr>
-<tr>
-<td align="center" width="25%">
 <img src="https://www.mysql.com/common/logos/logo-mysql-170x115.png" width="60px" height="60px" alt="MySQL" />
 <br><strong>MySQL</strong>
 <br><sub>Base de Datos</sub>
 </td>
+</tr>
+<tr>
 <td align="center" width="25%">
 <img src="https://getbootstrap.com/docs/5.3/assets/brand/bootstrap-logo-shadow.png" width="60px" height="60px" alt="Bootstrap" />
 <br><strong>Bootstrap 5</strong>
@@ -141,6 +134,11 @@
 <br><strong>Docker</strong>
 <br><sub>Containerización</sub>
 </td>
+<td align="center" width="25%">
+<img src="https://upload.wikimedia.org/wikipedia/commons/8/87/Sql_data_base_with_logo.png" width="60px" height="60px" alt="NLP" />
+<br><strong>spaCy NLP</strong>
+<br><sub>Parsing</sub>
+</td>
 </tr>
 </table>
 
@@ -154,7 +152,6 @@ Antes de comenzar, asegurate de tener instalado:
 - ✅ **MySQL 8.0+** - [Descargar](https://dev.mysql.com/downloads/)
 - ✅ **Google Chrome** - Para Selenium WebDriver
 - ✅ **Git** - Para clonar el repositorio
-- ✅ **API Key de Google Gemini** - [Obtener gratis](https://makersuite.google.com/app/apikey)
 
 ---
 
@@ -188,7 +185,6 @@ mysql -u root -p < setup_database.sql
 # 6. Configurar variables de entorno
 cp .env.example .env
 # Editar .env con tus credenciales:
-# - GEMINI_API_KEY: Tu API key de Google Gemini
 # - DB_PASSWORD: Tu contraseña de MySQL
 # - (Opcional) Credenciales de Indeed y LinkedIn
 
@@ -196,7 +192,7 @@ cp .env.example .env
 python app.py
 ```
 
-### Opción 2: Docker (Próximamente)
+### Opción 2: Docker
 
 ```bash
 docker-compose up -d
@@ -218,29 +214,22 @@ Abrí tu navegador en: **http://localhost:5000**
 3. Subí tu CV en formato PDF o DOCX
 4. El sistema extraerá automáticamente tus habilidades
 
-#### Configurar API de Gemini
-1. Obtené tu API key en [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Agregala en el archivo `.env`:
-   ```env
-   GEMINI_API_KEY=tu_api_key_aqui
-   ```
-
 ### 2️⃣ Buscar Empleos
 
 #### 🔵 LinkedIn
 1. Andá a **Buscar Empleos** → Pestaña LinkedIn
 2. Ingresá puesto y ubicación
-3. **Obtener token `li_at`**:
-   - Iniciá sesión en LinkedIn
-   - Presioná `F12` (DevTools)
-   - Application → Cookies → `li_at`
-   - Copiá el valor
+3. **Configurá credenciales en `.env`**:
+   ```env
+   LINKEDIN_EMAIL=tu_email@ejemplo.com
+   LINKEDIN_PASSWORD=tu_password
+   ```
 4. Hacé clic en **Iniciar Scraper**
 
 #### 🟢 Indeed
 1. Andá a **Buscar Empleos** → Pestaña Indeed
 2. Ingresá credenciales (o configuralas en `.env`)
-3. Seleccioná puesto, ubicación y páginas
+3. Seleccioná puesto y ubicación
 4. Hacé clic en **Iniciar Scraper**
 
 ### 3️⃣ Optimizar Currículums
@@ -267,7 +256,8 @@ EmpleoIA/
 ├── 📂 scrapers/              # Módulos de web scraping
 │   ├── indeed_scraper.py     # Scraper de Indeed
 │   ├── linkedin_scraper.py   # Scraper de LinkedIn
-│   └── linkedin_connection.py # Bot de conexiones
+│   ├── bumeran_scraper.py   # Scraper de Bumeran
+│   └── computrabajo_scraper.py # Scraper de Computrabajo
 │
 ├── 📂 templates/             # Plantillas HTML (Frontend)
 │   ├── base.html             # Plantilla base
@@ -285,7 +275,7 @@ EmpleoIA/
 │
 ├── 📄 app.py                 # Aplicación principal Flask
 ├── 📄 db_config.py           # Configuración de MySQL
-├── 📄 resume_parser.py       # Parser de CVs con IA
+├── 📄 resume_parser.py       # Parser de CVs
 │
 ├── 📄 requirements.txt       # Dependencias Python
 ├── 📄 setup_database.sql     # Script de BD
@@ -309,9 +299,6 @@ cp .env.example .env
 Luego editá el archivo `.env` con tus credenciales:
 
 ```env
-# Google Gemini API (OBLIGATORIO)
-GEMINI_API_KEY=tu_api_key_aqui
-
 # MySQL Database (OBLIGATORIO)
 DB_HOST=127.0.0.1
 DB_USER=root
@@ -323,8 +310,9 @@ DB_NAME=job_tracker
 INDEED_EMAIL=tu_email_google@gmail.com
 INDEED_PASSWORD=tu_password_google
 
-# LinkedIn Token (Opcional)
-LINKEDIN_TOKEN=tu_token_li_at
+# LinkedIn Credentials (Opcional)
+LINKEDIN_EMAIL=tu_email@ejemplo.com
+LINKEDIN_PASSWORD=tu_password
 
 # Bumeran & Computrabajo (Opcional - Para extracción profunda)
 BUMERAN_EMAIL=tu_email@ejemplo.com
@@ -338,13 +326,6 @@ COMPUTRABAJO_PASSWORD=tu_password
 
 > [!TIP]
 > **Verificación en 2 pasos (2FA) para Indeed**: Si tenés 2FA activada en tu cuenta de Google, deberás aprobar el inicio de sesión en tu celular cuando arranque el scraper. Alternativamente, podés crear una [contraseña de aplicación](https://support.google.com/accounts/answer/185833) en tu cuenta de Google.
-
-### Obtener API Key de Gemini
-
-1. Andá a [Google AI Studio](https://makersuite.google.com/app/apikey)
-2. Iniciá sesión con tu cuenta de Google
-3. Hacé clic en "Create API Key"
-4. Copiá la key y pegala en tu archivo `.env`
 
 ---
 
@@ -362,7 +343,7 @@ CREATE DATABASE job_tracker;
 
 ### ❌ LinkedIn no encuentra empleos
 **Causas comunes:**
-- Token `li_at` expirado (renovar cada ~1 año)
+- Credenciales incorrectas o expiradas
 - LinkedIn detectó scraping excesivo (esperar 24h)
 - Búsqueda demasiado amplia (ser más específico)
 
@@ -370,15 +351,6 @@ CREATE DATABASE job_tracker;
 **Solución:**
 - Desactivar 2FA temporalmente en Indeed
 - O usar credenciales de una cuenta sin 2FA
-
-### ❌ Error de Gemini API
-**Verificar:**
-```bash
-# Probar la API key
-curl -H "Content-Type: application/json" \
-     -d '{"contents":[{"parts":[{"text":"Hello"}]}]}' \
-     "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=TU_API_KEY"
-```
 
 ### ❌ Archivos CSV no aparecen
 **Solución:**
@@ -398,7 +370,6 @@ tail -f logs/app.log
 - **Sistema de Notificaciones**: Alertas por email cuando aparecen nuevos trabajos relevantes
 - **Tests Unitarios**: Cobertura completa de tests para mayor estabilidad
 - **CI/CD Pipeline**: Automatización de despliegues con GitHub Actions
-- **Docker Support**: Containerización completa para fácil deployment
 
 ### 🟡 Próximas Funcionalidades
 - **Más Plataformas**: Glassdoor, ZipRecruiter, Monster, CareerBuilder
@@ -409,7 +380,7 @@ tail -f logs/app.log
 - **Gráficos y Visualizaciones**: Charts interactivos para análisis de tendencias
 
 ### 🟢 Ideas a Largo Plazo
-- **IA Avanzada**: Predicción de probabilidad de conseguir entrevista con ML
+- **Machine Learning**: Predicción de probabilidad de conseguir entrevista
 - **Recomendación de Skills**: Sugerir habilidades para aprender basado en el mercado
 - **Mobile App**: Aplicación nativa para iOS y Android
 - **API REST Pública**: Permitir integraciones de terceros
@@ -458,13 +429,13 @@ Este proyecto está bajo la Licencia MIT. Ver el archivo [LICENSE](LICENSE) para
 - **Fernando Farfan** - Desarrollo y mantenimiento principal
 - GitHub: [@Fernandofarfan](https://github.com/Fernandofarfan)
 
-Proyecto desarrollado desde cero para automatizar la búsqueda de empleo con tecnologías modernas de IA.
+Proyecto desarrollado desde cero para automatizar la búsqueda de empleo con tecnologías modernas de web scraping y procesamiento inteligente de datos.
 
 ### Tecnologías
 
-- **IA**: [Google Gemini Pro](https://ai.google.dev/)
 - **Web Scraping**: [Selenium](https://www.selenium.dev/)
 - **Framework**: [Flask](https://flask.palletsprojects.com/)
+- **NLP**: [spaCy](https://spacy.io/)
 - **UI**: [Bootstrap 5](https://getbootstrap.com/)
 
 ---

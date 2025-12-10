@@ -130,7 +130,7 @@ def scrape_jobs(platform: str, query: str, location: str) -> list:
 ```
 Add: Bumeran and Computrabajo scrapers with login support
 Fix: MySQL connection pool exhaustion
-Update: Gemini API to use latest model
+Update: AI API to use latest model
 Docs: Improve installation instructions
 ```
 
@@ -211,8 +211,8 @@ Algunas áreas donde podés contribuir:
 ### 🔴 Alta Prioridad
 
 #### Backend & Scrapers
-- **Rate Limiting Inteligente**: Implementar sistema de rate limiting adaptativo para APIs (especialmente Gemini)
-- **Caché de Resultados**: Sistema de caché para resultados de scraping y análisis de IA
+- **Rate Limiting Inteligente**: Implementar sistema de rate limiting adaptativo para APIs externas
+- **Caché de Resultados**: Sistema de caché para resultados de scraping y análisis inteligente
 - **Tests Unitarios**: Agregar tests para scrapers, parsers y rutas de Flask
 - **Manejo de Errores**: Mejorar logging y recuperación de errores en scrapers
 - **Async Processing**: Implementar procesamiento asíncrono para scraping de múltiples plataformas

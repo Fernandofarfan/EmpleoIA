@@ -24,16 +24,32 @@ class ComputrabajoScraper:
         
     def _setup_driver(self):
         """Setup Chrome driver with options"""
+        # Prefer remote Selenium if available
+        selenium_url = os.getenv('SELENIUM_URL')
+        if selenium_url:
+            try:
+                options = Options()
+                options.add_argument('--no-sandbox')
+                options.add_argument('--disable-dev-shm-usage')
+                options.add_argument('--disable-notifications')
+                options.add_argument('--disable-blink-features=AutomationControlled')
+                options.add_argument('--window-size=1920,1080')
+                self.driver = webdriver.Remote(command_executor=selenium_url, options=options)
+                self.wait = WebDriverWait(self.driver, 20)
+                logger.info(f"Connected to remote Selenium at {selenium_url}")
+                return
+            except Exception as e:
+                logger.warning(f"Remote WebDriver failed: {e}. Falling back to local driver...")
+
+        options = Options()
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-notifications')
+        options.add_argument('--disable-blink-features=AutomationControlled')
+        options.add_argument('--window-size=1920,1080')
+        
         try:
-            chrome_options = Options()
-            chrome_options.add_argument('--disable-blink-features=AutomationControlled')
-            chrome_options.add_argument('--no-sandbox')
-            chrome_options.add_argument('--disable-dev-shm-usage')
-            chrome_options.add_argument('--start-maximized')
-            chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-            chrome_options.add_experimental_option('useAutomationExtension', False)
-            
-            self.driver = webdriver.Chrome(options=chrome_options)
+            self.driver = webdriver.Chrome(options=options)
             self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
             self.wait = WebDriverWait(self.driver, 15)
             logger.info("Chrome driver initialized successfully")

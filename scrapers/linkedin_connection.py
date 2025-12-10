@@ -44,7 +44,27 @@ class linkedinConnections:
         options.add_argument('--disable-extensions')
         options.add_argument('--disable-gpu')
         
+        # Check for Remote Selenium first (Docker scenario)
+        selenium_url = os.getenv('SELENIUM_URL')
+        if selenium_url:
+            try:
+                from selenium import webdriver
+                logging.info(f"Attempting to connect to remote Selenium at {selenium_url}")
+                remote_options = webdriver.ChromeOptions()
+                remote_options.add_argument('--no-sandbox')
+                remote_options.add_argument('--disable-dev-shm-usage')
+                remote_options.add_argument('--disable-gpu')
+                remote_options.add_argument("--start-maximized")
+                
+                self.driver = webdriver.Remote(command_executor=selenium_url, options=remote_options)
+                logging.info(f"Successfully initialized remote webdriver at {selenium_url}")
+                self.wait = WebDriverWait(self.driver, 30)
+                return
+            except Exception as e:
+                logging.warning(f"Remote WebDriver failed: {e}. Falling back to local drivers...")
+
         # Try multiple methods to initialize the driver
+
         driver_initialized = False
         
         # Method 1: Try undetected ChromeDriver with automatic version detection
@@ -76,6 +96,7 @@ class linkedinConnections:
                 from selenium.webdriver.chrome.service import Service
                 
                 logging.info("Falling back to WebDriver Manager...")
+                
                 service = Service(ChromeDriverManager().install())
                 regular_options = webdriver.ChromeOptions()
                 

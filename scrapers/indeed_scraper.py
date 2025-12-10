@@ -139,7 +139,55 @@ class indeedScraper:
         self.checkpoint_file = "indeed_jobs_checkpoint.csv" 
 
     
+    def _close_popups(self):
+        """Close common blocking popups (Google, localized 'Jobs for you', etc)"""
+        try:
+            # 1. Google Login Popup
+            try:
+                google_iframe = self.driver.find_element(By.CSS_SELECTOR, "iframe[title*='Sign in with Google']")
+                if google_iframe.is_displayed():
+                    self.driver.switch_to.frame(google_iframe)
+                    close_btn = self.driver.find_element(By.ID, "close")
+                    close_btn.click()
+                    self.driver.switch_to.default_content()
+                    logger.info("Closed Google login popup")
+            except:
+                self.driver.switch_to.default_content()
+
+            # 2. Localized "Jobs for you" / "Empleos para ti" Modal
+            # The screenshot shows a modal with an 'X' or 'Buscar empleos'
+            try:
+                # Generic close buttons in modals
+                close_selectors = [
+                    "button[aria-label='Close']",
+                    "button[aria-label='Cerrar']",
+                    ".icl-Modal-close",
+                    "div[role='dialog'] button[aria-label='Close']",
+                    "div[role='dialog'] button[aria-label='Cerrar']"
+                ]
+                for sel in close_selectors:
+                    btns = self.driver.find_elements(By.CSS_SELECTOR, sel)
+                    for btn in btns:
+                        if btn.is_displayed():
+                            btn.click()
+                            logger.info(f"Closed modal using selector: {sel}")
+                            time.sleep(1)
+            except:
+                pass
+                
+            # 3. Cookie Banners
+            try:
+                cookie_btns = self.driver.find_elements(By.ID, "onetrust-accept-btn-handler")
+                if cookie_btns:
+                    cookie_btns[0].click()
+            except:
+                pass
+                
+        except Exception as e:
+            logger.debug(f"Popup closer error (non-fatal): {e}")
+
     def _navigate_to_next_page(self):
+
         try:
             next_buttons = self.driver.find_elements(By.CSS_SELECTOR, "[data-testid='pagination-page-next']")
             
@@ -211,10 +259,10 @@ class indeedScraper:
             current_url = self.driver.current_url
             if "jk=" in current_url:
                 import re
-                jk_match = re.search(r'jk=([a-f0-9]+)', current_url)
+                jk_match = re.search(r'(?:jk=|vjk=)([a-f0-9]+)', current_url)
                 if jk_match:
                     job_id = jk_match.group(1)
-                    return f"https://www.indeed.com/applystart?jk={job_id}"
+                    return f"https://www.indeed.com/viewjob?jk={job_id}"
                     
             return "URL_NOT_FOUND"
             
@@ -230,51 +278,83 @@ class indeedScraper:
             return None
 
     def setup_driver(self):
+        """Initialize Chrome Driver with robust fallbacks"""
         if (not os.environ.get('PYTHONHTTPSVERIFY', '') and
             getattr(ssl, '_create_unverified_context', None)):
             ssl._create_default_https_context = ssl._create_unverified_context
-            
-        options = uc.ChromeOptions()
-        options.add_argument("--start-maximized")
-        options.add_argument('--disable-notifications')
-        options.add_argument('--no-sandbox')
-        options.add_argument('--disable-dev-shm-usage')
-        
+
+        # 1. Remote WebDriver (Docker/Grid)
+        selenium_url = os.getenv('SELENIUM_URL')
+        if selenium_url:
+            try:
+                logger.info(f"Attempting Remote WebDriver at {selenium_url}")
+                opts = webdriver.ChromeOptions()
+                opts.add_argument("--start-maximized")
+                opts.add_argument('--disable-notifications')
+                opts.add_argument('--no-sandbox')
+                opts.add_argument('--disable-dev-shm-usage')
+                self.driver = webdriver.Remote(command_executor=selenium_url, options=opts)
+                logger.info("Remote WebDriver verification successful")
+                self.wait = WebDriverWait(self.driver, 30)
+                return
+            except Exception as e:
+                logger.warning(f"Remote WebDriver failed: {e}")
+
+        # 2. Local: Undetected ChromeDriver
         try:
-            logger.info("Attempting to use undetected ChromeDriver...")
-            self.driver = uc.Chrome(options=options, version_main=None)
-            logger.info("Successfully initialized undetected ChromeDriver")
+            logger.info("Attempting undetected_chromedriver...")
+            opts = uc.ChromeOptions()
+            opts.add_argument("--start-maximized")
+            opts.add_argument('--disable-notifications')
+            # Fix for some windows environments
+            if os.name == 'nt':
+                opts.add_argument('--disable-gpu')
+            
+            self.driver = uc.Chrome(options=opts, use_subprocess=True)
+            logger.info("Success: undetected_chromedriver")
+            self.wait = WebDriverWait(self.driver, 30)
+            return
             
         except Exception as e:
-            logger.warning(f"Undetected ChromeDriver failed: {e}")
-            logger.info("Falling back to WebDriver Manager...")
+            logger.warning(f"Undetected Chrome failed: {e}")
+
+        # 3. Local: Standard Selenium (Automatic Manager in 4.x+)
+        try:
+            logger.info("Falling back to standard Selenium WebDriver...")
+            opts = webdriver.ChromeOptions()
+            opts.add_argument("--start-maximized")
+            opts.add_argument('--disable-notifications')
+            opts.add_argument('--disable-blink-features=AutomationControlled')
+            opts.add_experimental_option("excludeSwitches", ["enable-automation"])
+            opts.add_experimental_option('useAutomationExtension', False)
             
-            try:
-                service = Service(ChromeDriverManager().install())
-                
-                regular_options = webdriver.ChromeOptions()
-                regular_options.add_argument("--start-maximized")
-                regular_options.add_argument('--disable-notifications')
-                regular_options.add_argument('--no-sandbox')
-                regular_options.add_argument('--disable-dev-shm-usage')
-                regular_options.add_argument('--disable-blink-features=AutomationControlled')
-                regular_options.add_experimental_option("excludeSwitches", ["enable-automation"])
-                regular_options.add_experimental_option('useAutomationExtension', False)
-                
-                self.driver = webdriver.Chrome(service=service, options=regular_options)
-                
-                self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
-                logger.info("Successfully initialized WebDriver Manager ChromeDriver")
-                
-            except Exception as e2:
-                logger.error(f"WebDriver Manager also failed: {e2}")
-                logger.error("Please try one of these solutions:")
-                logger.error("1. Update Chrome browser to the latest version")
-                logger.error("2. Run: pip install --upgrade undetected-chromedriver webdriver-manager")
-                logger.error("3. Manually download compatible ChromeDriver")
-                raise Exception("Both undetected ChromeDriver and WebDriver Manager failed.")
-        
-        self.wait = WebDriverWait(self.driver, 30)
+            # Try letting Selenium Manager handle it (no kwargs)
+            self.driver = webdriver.Chrome(options=opts)
+            logger.info("Success: Standard Selenium WebDriver")
+            
+            # Stealth adjustments
+            self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            self.wait = WebDriverWait(self.driver, 30)
+            return
+
+        except Exception as e:
+            logger.warning(f"Standard Selenium failed: {e}")
+
+        # 4. Local: WebDriver Manager (Explicit Install)
+        try:
+            logger.info("Falling back to WebDriver Manager...")
+            from webdriver_manager.chrome import ChromeDriverManager
+            from selenium.webdriver.chrome.service import Service as ChromeService
+            
+            service = ChromeService(ChromeDriverManager().install())
+            self.driver = webdriver.Chrome(service=service, options=opts)
+            logger.info("Success: WebDriver Manager")
+            self.wait = WebDriverWait(self.driver, 30)
+            return
+            
+        except Exception as e:
+            logger.error(f"Prepare for termination. All driver methods failed. Final error: {e}")
+            raise Exception("Failed to initialize any Chrome Driver. Please update Chrome.")
 
     def _get_valid_job_elements(self):
         try:
@@ -400,8 +480,8 @@ class indeedScraper:
                 return False
                 
             import re
-            if "jk=" in url:
-                jk_match = re.search(r'jk=([a-f0-9]+)', url)
+            if "jk=" in url or "vjk=" in url:
+                jk_match = re.search(r'(?:jk=|vjk=)([a-f0-9]+)', url)
                 if jk_match and len(jk_match.group(1)) >= 10:
                     return True
             
@@ -583,7 +663,11 @@ class indeedScraper:
                 job_info["Experience_Years"] = self.extract_years_of_experience(description)
                 
                 
-                job_info["Job_Link"] = self.extract_job_link_from_panel()
+                # Use the job_id we already found earlier to construct the link
+                if job_id:
+                    job_info["Job_Link"] = f"https://www.indeed.com/viewjob?jk={job_id}"
+                else:
+                    job_info["Job_Link"] = self.extract_job_link_from_panel()
                 
                 
                 try:
@@ -1075,12 +1159,52 @@ class indeedScraper:
 
             logger.info("Entering email...")
             try:
-                email_field = self.wait_for_element(
-                    By.CSS_SELECTOR,
-                    "input[type='email'].whsOnd",
-                    timeout=15
-                )
-                self.safe_send_keys(email_field, self.email)
+                email_field = None
+                email_selectors = [
+                    "input[type='email']",
+                    "input[name='identifier']",
+                    "input[aria-label='Email or phone']",
+                    "#identifierId"
+                ]
+                
+                for selector in email_selectors:
+                    try:
+                        email_field = self.wait_for_element(
+                            By.CSS_SELECTOR,
+                            selector,
+                            timeout=5
+                        )
+                        if email_field.is_displayed():
+                            break
+                    except:
+                        continue
+                
+                if not email_field:
+                    # Try finding by input tag and checking visible ones
+                    try:
+                        inputs = self.driver.find_elements(By.TAG_NAME, "input")
+                        for inp in inputs:
+                            if inp.get_attribute("type") in ["email", "text"] and inp.is_displayed():
+                                email_field = inp
+                                break
+                    except:
+                        pass
+
+                if not email_field:
+                    raise Exception("Email field not found")
+
+                # Manually clear field to be safe
+                try:
+                    email_field.click()
+                    time.sleep(0.5)
+                    email_field.send_keys(Keys.CONTROL + "a")
+                    time.sleep(0.2)
+                    email_field.send_keys(Keys.DELETE)
+                    time.sleep(0.2)
+                except:
+                    pass
+                
+                self.safe_send_keys(email_field, self.email, clear_first=False)
                 logger.info("Email entered successfully")
                 time.sleep(2)
             except Exception as e:
@@ -1212,6 +1336,9 @@ class indeedScraper:
             self.driver.get("https://www.indeed.com")
             time.sleep(5)
             
+            # Close any initial popups/modals
+            self._close_popups()
+            
             if not self.handle_page_not_found():
                 logger.error("Failed to navigate to Indeed homepage")
                 return False
@@ -1222,8 +1349,55 @@ class indeedScraper:
                         EC.presence_of_element_located((By.ID, "jobsearch"))
                     )
 
-                    what_field = search_form.find_element(By.CSS_SELECTOR, "[id*='text-input-what']")
-                    where_field = search_form.find_element(By.CSS_SELECTOR, "[id*='text-input-where']")
+                    what_field = None
+                    where_field = None
+                    
+                    # Robust selectors for 'what' field
+                    what_selectors = [
+                        "input[name='q']",
+                        "#text-input-what",
+                        "input[aria-label='What']",
+                        "input[aria-label='Qué']", # Spanish
+                        "input[placeholder*='job title']", 
+                        "input[placeholder*='título']"
+                    ]
+                    
+                    for sel in what_selectors:
+                        try:
+                            el = search_form.find_element(By.CSS_SELECTOR, sel)
+                            if el.is_displayed():
+                                what_field = el
+                                break
+                        except:
+                            continue
+                            
+                    if not what_field:
+                        # Fallback
+                        what_field = search_form.find_element(By.CSS_SELECTOR, "input[type='text']")
+                        
+                    # Robust selectors for 'where' field
+                    where_selectors = [
+                        "input[name='l']",
+                        "#text-input-where", 
+                        "input[aria-label='Where']",
+                        "input[aria-label='Dónde']"
+                    ]
+                    
+                    for sel in where_selectors:
+                        try:
+                            el = search_form.find_element(By.CSS_SELECTOR, sel)
+                            if el.is_displayed():
+                                where_field = el
+                                break
+                        except:
+                            continue
+                            
+                    if not where_field:
+                         # Fallback: assume second input is location if what_field was found
+                         inputs = search_form.find_elements(By.TAG_NAME, "input")
+                         if len(inputs) >= 2:
+                             where_field = inputs[1]
+
 
                     what_field.click()
                     time.sleep(0.5)
@@ -1777,7 +1951,7 @@ class indeedScraper:
             logger.error(f"Error in apply_user_filters: {str(e)}")
             return False
 
-    def search_jobs_with_filters(self, job_title: str, location: str, filters=None, clear_previous=True) -> List[Dict]:
+    def search_jobs_with_filters(self, job_title: str, location: str, filters=None, clear_previous=True, max_jobs=50) -> List[Dict]:
         if filters is None:
             filters = {}
             
@@ -1800,7 +1974,7 @@ class indeedScraper:
                 if self.check_and_handle_verification():
                     time.sleep(5)
                 
-                jobs = self.extract_jobs(job_title, location, max_jobs_per_search=5)
+                jobs = self.extract_jobs(job_title, location, max_jobs_per_search=max_jobs)
                 
                 if jobs and len(jobs) > 0:
                     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -1825,8 +1999,10 @@ class indeedScraper:
                         final_filename = f"indeed_jobs_partial_{job_title.replace(' ', '_')}_{timestamp}.csv"
                         
                         df = pd.DataFrame(self.all_jobs)
-                        df.to_csv(final_filename, index=False)
-                        logger.info(f"Partial results saved to {final_filename} with {len(self.all_jobs)} jobs")
+                        os.makedirs('results', exist_ok=True)
+                        file_path = os.path.join('results', final_filename)
+                        df.to_csv(file_path, index=False)
+                        logger.info(f"Partial results saved to {file_path} with {len(self.all_jobs)} jobs")
                     
                     return self.all_jobs
                     

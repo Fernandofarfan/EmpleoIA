@@ -64,19 +64,19 @@ class resumeParser:
             self.all_technical_skills.extend(category)
 
     def configure_genai(self):
-        api_key = os.getenv("GEMINI_API_KEY")
+        api_key = os.getenv("GEMINI_API_KEY")  # Internal: Google Gemini
         if api_key:
             try:
                 genai.configure(api_key=api_key)
                 self.model = genai.GenerativeModel('gemini-2.5-flash-lite')
                 self.use_ai = True
-                print("✅ Gemini AI configured successfully")
+                print("✅ AI parser configured successfully")
             except Exception as e:
-                print(f"Error configuring Gemini AI: {e}")
+                print(f"Error configuring AI parser: {e}")
                 self.use_ai = False
         else:
             self.use_ai = False
-            print("Warning: GEMINI_API_KEY not found. Using regex-based parsing.")
+            print("Warning: AI API key not found. Using regex-based parsing.")
 
     def extract_text_from_file(self, file_path):
         

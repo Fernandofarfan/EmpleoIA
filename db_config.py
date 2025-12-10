@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 class DatabaseManager:
     def __init__(self):
         self.db_config = {
-            'host': '127.0.0.1',
-            'user': 'root',
+            'host': os.getenv('DB_HOST', '127.0.0.1'),
+            'user': os.getenv('DB_USER', 'root'),
             'password': os.getenv('DB_PASSWORD', ''),
-            'database': 'job_tracker',
-            'pool_name': 'job_pool_v2',
-            'pool_size': 2
+            'database': os.getenv('DB_NAME', 'job_tracker'),
+            'pool_name': os.getenv('DB_POOL_NAME', 'job_pool_v2'),
+            'pool_size': int(os.getenv('DB_POOL_SIZE', '2'))
         }
         
         try:

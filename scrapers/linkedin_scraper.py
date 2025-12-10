@@ -38,8 +38,10 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class linkedinClass:
-    def __init__(self, li_at_token: str):
+    def __init__(self, li_at_token: str = None, email: str = None, password: str = None):
         self.li_at_token = li_at_token
+        self.email = email
+        self.password = password
         self.selectors_config = self._load_selectors_config()
         self.setup_driver()
 
@@ -61,12 +63,61 @@ class linkedinClass:
             getattr(ssl, '_create_unverified_context', None)):
             ssl._create_default_https_context = ssl._create_unverified_context
             
+        # If a remote Selenium server is provided, attempt remote connection first
+        selenium_url = os.getenv('SELENIUM_URL')
+        if selenium_url:
+            try:
+                logger.info(f"Attempting to connect to remote Selenium at {selenium_url}")
+                remote_options = webdriver.ChromeOptions()
+                # set user-agent from env or use a reasonable default
+                ua = os.getenv('LINKEDIN_USER_AGENT') or (
+                    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+                    'AppleWebKit/537.36 (KHTML, like Gecko) '
+                    'Chrome/120.0.0.0 Safari/537.36'
+                )
+                remote_options.add_argument(f"--user-agent={ua}")
+                remote_options.add_argument("--start-maximized")
+                remote_options.add_argument('--disable-notifications')
+                remote_options.add_argument('--no-sandbox')
+                remote_options.add_argument('--disable-dev-shm-usage')
+                remote_options.add_argument('--disable-blink-features=AutomationControlled')
+                # support using an existing Chrome user profile (useful to reuse logged-in session)
+                user_data_dir = os.getenv('CHROME_USER_DATA_DIR') or os.getenv('LINKEDIN_USER_DATA_DIR')
+                chrome_profile = os.getenv('CHROME_PROFILE') or os.getenv('LINKEDIN_PROFILE')
+                if user_data_dir:
+                    remote_options.add_argument(f"--user-data-dir={user_data_dir}")
+                if chrome_profile:
+                    remote_options.add_argument(f"--profile-directory={chrome_profile}")
+                remote_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+                remote_options.add_experimental_option('useAutomationExtension', False)
+                self.driver = webdriver.Remote(command_executor=selenium_url, options=remote_options)
+                self.driver.set_page_load_timeout(30)
+                logger.info("Successfully initialized Remote WebDriver")
+                self.wait = WebDriverWait(self.driver, 30)
+                return
+            except Exception as e:
+                logger.error(f"CRITICAL: Remote WebDriver failed: {e}. Falling back to local drivers (likely to fail in Docker)...")
+
         options = uc.ChromeOptions()
+        # set user-agent for local undetected Chromium too
+        ua = os.getenv('LINKEDIN_USER_AGENT') or (
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) '
+            'AppleWebKit/537.36 (KHTML, like Gecko) '
+            'Chrome/120.0.0.0 Safari/537.36'
+        )
+        options.add_argument(f"--user-agent={ua}")
         options.add_argument("--start-maximized")
         options.add_argument('--disable-notifications')
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-blink-features=AutomationControlled')
+        # support using an existing Chrome user profile (useful to reuse logged-in session)
+        user_data_dir = os.getenv('CHROME_USER_DATA_DIR') or os.getenv('LINKEDIN_USER_DATA_DIR')
+        chrome_profile = os.getenv('CHROME_PROFILE') or os.getenv('LINKEDIN_PROFILE')
+        if user_data_dir:
+            options.add_argument(f"--user-data-dir={user_data_dir}")
+        if chrome_profile:
+            options.add_argument(f"--profile-directory={chrome_profile}")
         
         try:
             logger.info("Attempting to use undetected ChromeDriver...")
@@ -83,11 +134,20 @@ class linkedinClass:
                 machine = platform.machine()
                 
                 regular_options = webdriver.ChromeOptions()
+                # apply same user-agent to regular options
+                regular_options.add_argument(f"--user-agent={ua}")
                 regular_options.add_argument("--start-maximized")
                 regular_options.add_argument('--disable-notifications')
                 regular_options.add_argument('--no-sandbox')
                 regular_options.add_argument('--disable-dev-shm-usage')
                 regular_options.add_argument('--disable-blink-features=AutomationControlled')
+                # propagate user profile options to regular ChromeOptions as well
+                user_data_dir = os.getenv('CHROME_USER_DATA_DIR') or os.getenv('LINKEDIN_USER_DATA_DIR')
+                chrome_profile = os.getenv('CHROME_PROFILE') or os.getenv('LINKEDIN_PROFILE')
+                if user_data_dir:
+                    regular_options.add_argument(f"--user-data-dir={user_data_dir}")
+                if chrome_profile:
+                    regular_options.add_argument(f"--profile-directory={chrome_profile}")
                 regular_options.add_experimental_option("excludeSwitches", ["enable-automation"])
                 regular_options.add_experimental_option('useAutomationExtension', False)
                 
@@ -127,6 +187,31 @@ class linkedinClass:
         
         self.wait = WebDriverWait(self.driver, 30)
     
+    def _check_for_rate_limit(self):
+        """Check if we've been rate limited (HTTP 429)"""
+        try:
+            # Check title
+            if "429" in self.driver.title or "Too Many Requests" in self.driver.title:
+                logger.error("CRITICAL: Rate limit detected (HTTP 429)")
+                self._handle_rate_limit()
+                return True
+                
+            # Check specific error content
+            page_text = self.driver.find_element(By.TAG_NAME, "body").text
+            if "HTTP ERROR 429" in page_text or "Esta página no funciona" in page_text and "429" in page_text:
+                logger.error("CRITICAL: Rate limit detected in page content")
+                self._handle_rate_limit()
+                return True
+                
+            return False
+        except Exception:
+            return False
+            
+    def _handle_rate_limit(self):
+        """Handle rate limit by waiting significantly"""
+        wait_time = random.uniform(300, 600)  # 5-10 minutes
+        logger.warning(f"Sleeping for {int(wait_time)} seconds due to rate limit...")
+        time.sleep(wait_time)
     
     def _load_selectors_config(self):
         """Load selector configuration with multiple fallbacks"""
@@ -192,9 +277,19 @@ class linkedinClass:
     def login_with_cookie(self):
         """Log into LinkedIn using the provided authentication token"""
         try:
-            print("Loading LinkedIn...")
-            self.driver.get("https://www.linkedin.com")
-            time.sleep(3)  # Increased wait time
+            print("Loading LinkedIn for cookie login...")
+            # Go to login page first to ensure correct domain context for cookies
+            try:
+                self.driver.get("https://www.linkedin.com/login")
+            except Exception:
+                self.driver.get("https://www.linkedin.com")
+            time.sleep(2)
+
+            # Ensure a clean cookie jar
+            try:
+                self.driver.delete_all_cookies()
+            except Exception:
+                pass
             
             # Check if the window is still open
             try:
@@ -209,39 +304,61 @@ class linkedinClass:
                     print("No windows available, reopening...")
                     self.driver = None
                     self.setup_driver()
-                    self.driver.get("https://www.linkedin.com")
-                    time.sleep(3)
+                if not self.li_at_token:
+                    print("No li_at token found. Please provide one in .env")
+                    return False
+                
+                # Navigate to a simple page on the domain to set context
+                print("Navigating to domain to set cookie...")
+                self.driver.get("https://www.linkedin.com/404")
+                time.sleep(1)
+                
+                print("Adding authentication cookie...")
+                # Set cookie for .linkedin.com which covers www and others
+                cookie = {
+                    'name': 'li_at',
+                    'value': self.li_at_token,
+                    'domain': '.linkedin.com',
+                    'path': '/',
+                    'secure': True,
+                    'expiry': int(time.time()) + 31536000  # 1 year
+                }
+                self.driver.add_cookie(cookie)
+                
+                # Add a dummy cookie to force browser to recognize the domain context
+                self.driver.execute_script(f"document.cookie='li_at={self.li_at_token}; domain=.linkedin.com; path=/; Secure; SameSite=None';")
+                
+                logger.info("Cookie set. Refreshing to apply...")
+                self.driver.get("https://www.linkedin.com/feed/")
+                time.sleep(5)
             
-            print("Adding authentication cookie...")
-            cookie = {
-                'name': 'li_at',
-                'value': self.li_at_token,
-                'domain': '.linkedin.com',
-                'path': '/',
-                'secure': True,
-                'httpOnly': True
-            }
-            
-            # Add cookie
-            self.driver.add_cookie(cookie)
-            
-            print("Refreshing page...")
-            # Use navigate instead of refresh to avoid window issues
-            self.driver.get("https://www.linkedin.com/feed/")
-            time.sleep(5)  # Give more time for LinkedIn to process the cookie
-            
-            # Verify login by checking for feed or profile elements
-            try:
-                # Check if we're logged in by looking for feed elements
-                self.wait.until(EC.presence_of_element_located((
-                    By.CSS_SELECTOR, 
-                    "div.feed-identity-module, div.global-nav__me, button[data-control-name='nav.settings']"
-                )))
-                print("Login successful!")
-                return True
-            except:
-                print("Login verification failed, but continuing...")
-                return True  # Continue anyway as sometimes elements load slowly
+            if self._check_for_rate_limit():
+                return False
+                
+            # Give more time for LinkedIn to process the cookie and render the feed
+            max_wait = 20
+            selectors = [
+                "div.feed-identity-module",
+                "div.global-nav__me",
+                "button[data-control-name='nav.settings']",
+                "a[data-control-name='identity_profile_photo']",
+                "img.global-nav__me-photo"
+            ]
+
+            start = time.time()
+            while time.time() - start < max_wait:
+                for sel in selectors:
+                    try:
+                        elems = self.driver.find_elements(By.CSS_SELECTOR, sel)
+                        if elems and len(elems) > 0:
+                            print("Login appears successful (found selector):", sel)
+                            return True
+                    except Exception:
+                        continue
+                time.sleep(1.0)
+
+            print("Login verification failed after waits; continuing anyway.")
+            return True
                 
         except Exception as e:
             print(f"Error during login: {str(e)}")
@@ -257,6 +374,89 @@ class linkedinClass:
             return False
 
 
+    def login_with_credentials(self):
+        """Log into LinkedIn using email and password"""
+        try:
+            if not self.email or not self.password:
+                print("Email or password not provided")
+                return False
+            
+            print("Loading LinkedIn login page...")
+            self.driver.get("https://www.linkedin.com/login")
+            time.sleep(3)
+            
+            # Find and fill email field
+            try:
+                email_field = self.driver.find_element(By.ID, "username")
+                email_field.clear()
+                email_field.send_keys(self.email)
+                time.sleep(1)
+            except Exception as e:
+                print(f"Error entering email: {e}")
+                return False
+            
+            # Find and fill password field
+            try:
+                password_field = self.driver.find_element(By.ID, "password")
+                password_field.clear()
+                password_field.send_keys(self.password)
+                time.sleep(1)
+            except Exception as e:
+                print(f"Error entering password: {e}")
+                return False
+            
+            # Click sign in button
+            try:
+                sign_in_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+                sign_in_button.click()
+                print("Login button clicked, waiting for response...")
+                time.sleep(5)
+            except Exception as e:
+                print(f"Error clicking login button: {e}")
+                return False
+            
+            # Check if we need to handle verification/security check
+            current_url = self.driver.current_url
+            if "checkpoint" in current_url or "challenge" in current_url:
+                print("⚠️ LinkedIn requires additional verification. Please complete it manually in the browser.")
+                print("Waiting 60 seconds for manual verification...")
+                time.sleep(60)
+            
+            # Verify login success
+            max_wait = 20
+            selectors = [
+                "div.feed-identity-module",
+                "div.global-nav__me",
+                "button[data-control-name='nav.settings']",
+                "a[data-control-name='identity_profile_photo']",
+                "img.global-nav__me-photo"
+            ]
+
+            start = time.time()
+            while time.time() - start < max_wait:
+                for sel in selectors:
+                    try:
+                        elems = self.driver.find_elements(By.CSS_SELECTOR, sel)
+                        if elems and len(elems) > 0:
+                            print("✅ Login successful!")
+                            return True
+                    except Exception:
+                        continue
+                time.sleep(1.0)
+
+            # Check if we're at least on LinkedIn (even if not at feed)
+            if "linkedin.com" in self.driver.current_url and "login" not in self.driver.current_url:
+                print("Login appears successful (redirected from login page)")
+                return True
+            
+            print("Login verification timeout")
+            return False
+            
+        except Exception as e:
+            print(f"Error during credentials login: {str(e)}")
+            return False
+
+
     def search_jobs(self, keyword: str = "Data Engineer", location: str = "United States", 
             filters: dict = None, max_jobs_per_search: int = 50):
         """Perform job search with enhanced error handling and configurable job limit"""
@@ -267,7 +467,35 @@ class linkedinClass:
             search_url = f"https://www.linkedin.com/jobs/search/?keywords={keyword.replace(' ', '%20')}&location={location.replace(' ', '%20')}"
             print(f"Navigating directly to search URL: {search_url}")
             self.driver.get(search_url)
-            time.sleep(8)  # Give more time for the page to load completely
+            
+            if self._check_for_rate_limit():
+                print("Rate limit detected on search, stopping...")
+                return []
+                
+            # Give more time for the page to load and for JS to render
+            time.sleep(4)
+            # Try to dismiss cookie banners or modals that block content
+            try:
+                cookie_selectors = [
+                    "button[aria-label='Accept cookies']",
+                    "#onetrust-accept-btn-handler",
+                    "button[data-cookiebanner='accept_button']",
+                    "button[data-test-accept-cookies]"
+                ]
+                for sel in cookie_selectors:
+                    try:
+                        btns = self.driver.find_elements(By.CSS_SELECTOR, sel)
+                        for b in btns:
+                            try:
+                                if b.is_displayed() and b.is_enabled():
+                                    b.click()
+                                    time.sleep(1)
+                            except Exception:
+                                continue
+                    except Exception:
+                        continue
+            except Exception:
+                pass
             
             # Verify we're on the search results page
             current_url = self.driver.current_url
@@ -275,13 +503,21 @@ class linkedinClass:
             
             # Check if we have job results
             try:
-                # Wait for job results to load
+                # Wait longer for job results to load (up to 20s)
+                self.wait = WebDriverWait(self.driver, 20)
                 self.wait.until(EC.presence_of_element_located((
-                    By.CSS_SELECTOR, ".jobs-search-results-list, .jobs-search__results-list, .scaffold-layout__list"
+                    By.CSS_SELECTOR, ".jobs-search-results-list, .jobs-search__results-list, .scaffold-layout__list, ul.jobs-search__results-list"
                 )))
                 print("Job results page loaded successfully")
-            except:
-                print("Warning: Could not confirm job results loaded, continuing anyway...")
+            except Exception:
+                print("Warning: Could not confirm job results loaded after extended wait, will attempt to scroll/inspect DOM...")
+                # Try scrolling to force lazy-loading
+                try:
+                    for _ in range(3):
+                        self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                        time.sleep(2)
+                except Exception:
+                    pass
             
             time.sleep(3)
             

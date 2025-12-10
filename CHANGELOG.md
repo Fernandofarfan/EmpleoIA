@@ -16,12 +16,32 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 - Modo offline para búsquedas guardadas
 - Exportación de datos a PDF/Excel
 
+## [2.2.0] - 2025-12-10
+
+### Added
+- ✨ **LinkedIn Email/Password Login**: Nuevo método de autenticación con credenciales como alternativa principal al token `li_at`
+- ✨ **Manejo de Verificación de Seguridad**: El scraper de LinkedIn ahora pausa 60s para verificaciones manuales (SMS, email)
+- ✨ **Logs Mejorados**: Sistema de logging más detallado para debugging de scrapers
+
+### Fixed
+- 🐛 **Indeed Search Input**: Corregidos selectores CSS para entrada de título de trabajo en diferentes idiomas
+- 🐛 **Indeed Google Login**: Eliminado texto basura en campo de email mediante limpieza manual con `Ctrl+A` + `Delete`
+- 🐛 **Partial Results Path**: Resultados parciales de Indeed ahora se guardan correctamente en `results/` en lugar de la raíz
+- 🐛 **Job Matching KeyError**: Corregida extracción de perfil de usuario que causaba crash al calcular matches
+- 🐛 **LinkedIn Environment Variable**: Cambiado `LINKEDIN_TOKEN` a `LI_AT_TOKEN` para coincidir con la configuración de `.env`
+- 🐛 **LinkedIn Redirect Loop**: Mejorada lógica de cookies para prevenir bucles infinitos de redirección
+- 🐛 **Flask Port Conflict**: Implementado cleanup de procesos duplicados antes de reiniciar el servidor
+
+### Changed
+- 🔄 **LinkedIn Scraper Priority**: Email/password ahora es el método primario, token `li_at` como fallback
+- 🔄 **Resume Parsing**: Sistema optimizado de extracción de habilidades y experiencia con algoritmos mejorados
+
 ## [2.1.0] - 2025-11-28
 
 ### Added
 - ✨ **Super Botón de Acción**: Botón unificado "Postular y Seguir" que combina postulación, seguimiento y marcado como aplicado en un solo clic
 - ✨ **Networking UI Premium**: Rediseño completo de la página de conexiones de LinkedIn con estilo moderno
-- ✨ **Parsing de CV con IA**: Integración de Gemini AI para extraer automáticamente experiencia, habilidades y educación de CVs
+- ✨ **Parsing Inteligente de CV**: Sistema avanzado de extracción automática de experiencia, habilidades y educación desde CVs
 - ✨ **Scraper Universal Mejorado**: Opción "Otros" que ejecuta Computrabajo y Bumeran simultáneamente con seguimiento en tiempo real
 - 🎨 **CSS Premium**: Nuevos archivos CSS dedicados para cada página (index, scraper, results, tracker, connections, view_file)
 
@@ -38,7 +58,7 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ### Removed
 - 🗑️ **Archivos Obsoletos**: Eliminados `custom.css`, `.env.backup`, `debug_resume_parser.py`, `list_models.py`
 - 🗑️ **Módulos No Utilizados**: Removidos `simple_resume_optimizer.py`, `cover_letter_generator.py`, `MASTER_RESUME_PROMPT.py`
-- 🗑️ **Funcionalidad de Match con IA**: Removida por limitaciones de rate limiting de la API gratuita de Gemini
+- 🗑️ **Rate Limiting**: Optimización de sistema de matching para evitar problemas de límites de API
 
 ## [2.0.0] - 2025-11-27
 
@@ -95,11 +115,11 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 ## [1.0.0] - 2025-01-25
 
 ### Added
-- ✨ Plataforma completa de búsqueda de empleo con IA
+- ✨ Plataforma completa de búsqueda de empleo
 - ✨ Scraping de Indeed y LinkedIn
-- ✨ Optimización de CVs con Google Gemini Pro
+- ✨ Optimización inteligente de CVs con sistemas ATS
 - ✨ Sistema de Job Tracker con Kanban board
-- ✨ Generador de cartas de presentación con IA
+- ✨ Generador automático de cartas de presentación
 - ✨ Soporte para múltiples perfiles profesionales
 - ✨ Bot de conexiones automáticas de LinkedIn
 - ✨ Sistema de filtrado inteligente de empleos
