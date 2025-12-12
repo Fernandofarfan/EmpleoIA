@@ -11,7 +11,9 @@ from selenium.webdriver.common.keys import Keys
 import undetected_chromedriver as uc
 
 class linkedinConnections:
-    def __init__(self, li_at_token: str):
+    def __init__(self, email=None, password=None, li_at_token=None):
+        self.email = email
+        self.password = password
         self.li_at_token = li_at_token
         self.setup_driver()
         self.setup_logging()
@@ -169,6 +171,88 @@ class linkedinConnections:
         self.wait = WebDriverWait(self.driver, 30)
         logging.info("Driver setup completed successfully")
 
+    def login_with_credentials(self):
+        """Log into LinkedIn using email and password"""
+        try:
+            if not self.email or not self.password:
+                logging.error("Email or password not provided")
+                return False
+            
+            logging.info("Loading LinkedIn login page...")
+            self.driver.get("https://www.linkedin.com/login")
+            time.sleep(3)
+            
+            # Find and fill email field
+            try:
+                email_field = self.driver.find_element(By.ID, "username")
+                email_field.clear()
+                email_field.send_keys(self.email)
+                time.sleep(1)
+            except Exception as e:
+                logging.error(f"Error entering email: {e}")
+                return False
+            
+            # Find and fill password field
+            try:
+                password_field = self.driver.find_element(By.ID, "password")
+                password_field.clear()
+                password_field.send_keys(self.password)
+                time.sleep(1)
+            except Exception as e:
+                logging.error(f"Error entering password: {e}")
+                return False
+            
+            # Click sign in button
+            try:
+                sign_in_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+                sign_in_button.click()
+                logging.info("Login button clicked, waiting for response...")
+                time.sleep(5)
+            except Exception as e:
+                logging.error(f"Error clicking login button: {e}")
+                return False
+            
+            # Check if we need to handle verification/security check
+            current_url = self.driver.current_url
+            if "checkpoint" in current_url or "challenge" in current_url:
+                logging.warning("⚠️ LinkedIn requires additional verification. Please complete it manually in the browser.")
+                logging.info("Waiting 60 seconds for manual verification...")
+                time.sleep(60)
+            
+            # Verify login success
+            max_wait = 20
+            selectors = [
+                "div.feed-identity-module",
+                "div.global-nav__me",
+                "button[data-control-name='nav.settings']",
+                "a[data-control-name='identity_profile_photo']",
+                "img.global-nav__me-photo"
+            ]
+
+            start = time.time()
+            while time.time() - start < max_wait:
+                for sel in selectors:
+                    try:
+                        elems = self.driver.find_elements(By.CSS_SELECTOR, sel)
+                        if elems and len(elems) > 0:
+                            logging.info("✅ Login successful!")
+                            return True
+                    except Exception:
+                        continue
+                time.sleep(1.0)
+
+            # Check if we're at least on LinkedIn (even if not at feed)
+            if "linkedin.com" in self.driver.current_url and "login" not in self.driver.current_url:
+                logging.info("Login appears successful (redirected from login page)")
+                return True
+                
+            logging.error("Login failed: Could not verify successful login")
+            return False
+            
+        except Exception as e:
+            logging.error(f"Login error: {str(e)}")
+            return False
+
     def login_with_cookie(self):
         try:
             logging.info("Loading LinkedIn...")
@@ -213,26 +297,51 @@ class linkedinConnections:
     def select_people_filter(self):
         """Select the People filter in search results"""
         try:
-            people_filter = self.wait.until(EC.element_to_be_clickable((
-                By.CSS_SELECTOR,
-                "button.artdeco-pill.search-reusables__filter-pill-button"
-            )))
-            if "People" in people_filter.text:
-                people_filter.click()
-                time.sleep(2)
-                return True
+            # Try to find the filter button by text (English or Spanish)
             filter_buttons = self.driver.find_elements(
                 By.CSS_SELECTOR,
-                "button.artdeco-pill.search-reusables__filter-pill-button"
+                "button.artdeco-pill.search-reusables__filter-pill-button, li.search-reusables__primary-filter button"
             )
             
+            target_texts = ["People", "Personas", "Gente"]
+            
             for button in filter_buttons:
-                if button.text.strip() == "People":
+                button_text = button.text.strip()
+                if any(text in button_text for text in target_texts):
+                    logging.info(f"Found People filter button: {button_text}")
                     button.click()
-                    time.sleep(2)
+                    time.sleep(3)
                     return True
-                    
-            raise Exception("People filter button not found")
+            
+            # Fallback: Try to click the 'People' tab if it exists as a navigation link (sometimes different UI)
+            try:
+                nav_links = self.driver.find_elements(By.CSS_SELECTOR, "ul.search-reusables__primary-filter-list li button")
+                for link in nav_links:
+                    if any(text in link.text.strip() for text in target_texts):
+                        link.click()
+                        time.sleep(3)
+                        return True
+            except:
+                pass
+
+            logging.warning("People filter button not found by text. Trying URL navigation...")
+            # Fallback 2: Force navigation via URL if button click fails
+            current_url = self.driver.current_url
+            if "keywords=" in current_url:
+                new_url = current_url.replace("/all/", "/people/")
+                if "/people/" not in new_url and "search/results" in new_url:
+                     # If URL structure is different, try appending/modifying
+                     if "?" in new_url:
+                         new_url = new_url + "&origin=SWITCH_SEARCH_VERTICAL&sid=0"
+                
+                # Simplest fallback: Construct search URL for people directly
+                if "keywords=" in current_url:
+                    keyword = current_url.split("keywords=")[1].split("&")[0]
+                    self.driver.get(f"https://www.linkedin.com/search/results/people/?keywords={keyword}")
+                    time.sleep(3)
+                    return True
+
+            raise Exception("People filter button not found and URL fallback failed")
             
         except Exception as e:
             logging.error(f"Error selecting People filter: {str(e)}")
@@ -421,7 +530,18 @@ class linkedinConnections:
 
     def _apply_location_filters_in_session(self, locations):
         """Apply location filters within an already open filter session"""
+        self._update_debug_banner("Applying location filters...")
         try:
+            # Try to click the "Locations" filter button first if the inputs aren't visible
+            try:
+                # English: "Locations", Spanish: "Ubicaciones"
+                loc_btn = self.driver.find_element(By.XPATH, "//button[contains(., 'Locations') or contains(., 'Ubicaciones')]")
+                if loc_btn.is_displayed():
+                    loc_btn.click()
+                    time.sleep(2)
+            except Exception:
+                pass
+
             for location in locations:
                 logging.info(f"Looking for location: {location}")
                 
@@ -457,6 +577,38 @@ class linkedinConnections:
                     
         except Exception as e:
             logging.error(f"Error applying location filters: {str(e)}")
+        
+        self._update_debug_banner("Location filters applied.")
+
+    def _update_debug_banner(self, text):
+        """Injects or updates a visual debug banner on the page."""
+        try:
+            safe_text = text.replace('"', '\\"').replace('\n', ' ')
+            script = f"""
+            var d = document.getElementById('bot-debug-banner');
+            if (!d) {{
+                d = document.createElement('div');
+                d.id = 'bot-debug-banner';
+                d.style.position = 'fixed';
+                d.style.top = '60px';
+                d.style.right = '20px';
+                d.style.zIndex = '10000';
+                d.style.background = 'rgba(0, 0, 0, 0.85)';
+                d.style.color = '#00ff00';
+                d.style.padding = '15px';
+                d.style.fontSize = '18px';
+                d.style.fontWeight = 'bold';
+                d.style.borderRadius = '8px';
+                d.style.boxShadow = '0 4px 6px rgba(0,0,0,0.3)';
+                d.style.fontFamily = 'monospace';
+                d.style.border = '2px solid #00ff00';
+                document.body.appendChild(d);
+            }}
+            d.innerHTML = "🤖 BOT STATUS:<br>{safe_text}";
+            """
+            self.driver.execute_script(script)
+        except Exception:
+            pass
 
     def _apply_company_filter_in_session(self, company_name):
         """Apply company filter within an already open filter session using your working logic"""
@@ -608,38 +760,75 @@ class linkedinConnections:
             logging.error(f"Error navigating to next page: {str(e)}")
             return False
     
-    def _scroll_to_load_all_cards(self, max_scrolls: int = 15, wait_between: float = 1.2):
+    def _scroll_to_load_all_cards(self, max_scrolls: int = 5, wait_between: float = 1.0):
         """Scroll the results to load as many people cards as possible (for infinite scroll layouts)."""
         try:
-            last_count = 0
-            for i in range(max_scrolls):
-                cards = self._find_people_cards()
-                current_count = len(cards)
-                logging.info(f"Loaded {current_count} people cards after scroll {i}")
-                if current_count <= last_count:
-                    break
-                last_count = current_count
-                self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-                time.sleep(wait_between)
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight / 2);")
+            time.sleep(0.5)
+            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            time.sleep(wait_between)
         except Exception as e:
             logging.debug(f"Scroll load error (non-fatal): {e}")
 
     def _find_people_cards(self):
         """Find people result cards robustly."""
-        try:
-            # Prefer stable attribute used in the provided HTML
-            cards = self.driver.find_elements(By.XPATH,
-                "//li[.//div[@data-view-name='search-entity-result-universal-template']]"
-            )
-            if cards:
-                return cards
-        except Exception:
-            pass
-        # Fallback to generic LinkedIn people cards
-        try:
-            return self.driver.find_elements(By.CSS_SELECTOR, ".entity-result__item, li.reusable-search__result-container")
-        except Exception:
-            return []
+        cards = []
+        self._update_debug_banner("Searching for cards...")
+        
+        # Wait a bit for DOM to stabilize
+        time.sleep(2)
+
+        selectors = [
+            # Standard LI container
+            (By.XPATH, "//li[contains(@class, 'reusable-search__result-container')]"),
+            # CSS version
+            (By.CSS_SELECTOR, "li.reusable-search__result-container"),
+            # Inner entity result div (sometimes the LI is hard to catch)
+            (By.CSS_SELECTOR, ".entity-result__item"),
+            (By.XPATH, "//div[contains(@class, 'entity-result__item')]"),
+            # NEW: Data view name (seen in debug HTML)
+            (By.CSS_SELECTOR, "div[data-view-name='people-search-result']"),
+            # Search by text content of the button (Conectar/Connect) - finding the container LI
+            (By.XPATH, "//button[contains(., 'Conectar') or contains(., 'Connect')]/ancestor::li[contains(@class, 'reusable-search__result-container')]"),
+            # Search by text content of the button - finding the container DIV
+            (By.XPATH, "//button[contains(., 'Conectar') or contains(., 'Connect')]/ancestor::div[contains(@class, 'entity-result__item')]"),
+            # Very broad fallback: any list item in the results list
+            (By.CSS_SELECTOR, "ul.reusable-search__entity-result-list > li")
+        ]
+
+        for by, value in selectors:
+            try:
+                found = self.driver.find_elements(by, value)
+                if found:
+                    cards = found
+                    logging.info(f"Found {len(cards)} cards using selector: {value}")
+                    break
+            except Exception:
+                continue
+
+        msg = f"Found {len(cards)} cards"
+        logging.info(msg)
+        self._update_debug_banner(msg)
+        
+        if not cards:
+            # Save debug HTML
+            try:
+                debug_path = os.path.join("temp", "debug_cards_not_found.html")
+                with open(debug_path, "w", encoding="utf-8") as f:
+                    f.write(self.driver.page_source)
+                logging.info(f"Saved debug HTML to {debug_path}")
+            except Exception as e:
+                logging.error(f"Could not save debug HTML: {e}")
+
+        # Visual debug for found cards
+        if cards:
+            try:
+                for c in cards:
+                    self.driver.execute_script("arguments[0].style.border='2px dashed orange';", c)
+            except:
+                pass
+                
+        return cards
 
     def _is_verified_card(self, card) -> bool:
         """Detect Verified badge within a card."""
@@ -733,50 +922,98 @@ class linkedinConnections:
 
     def _click_connect_on_profile(self) -> bool:
         """On a profile page, try top-level Connect, else More -> Connect."""
-        # Try top-level Connect
+        self._update_debug_banner("🔍 Looking for Conectar button...")
+        time.sleep(1.5)  # Give page time to fully load
+        
         try:
-            connect_btns = self.driver.find_elements(By.XPATH,
-                "//button[(@aria-label and contains(translate(@aria-label,'CONNECT','connect'),'connect')) or contains(translate(.,'CONNECT','connect'),'connect')]"
-            )
-            for btn in connect_btns:
-                if btn.is_displayed() and btn.is_enabled():
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
-                    time.sleep(0.6)
-                    try:
-                        btn.click()
-                    except Exception:
-                        self.driver.execute_script("arguments[0].click();", btn)
-                    time.sleep(1.2)
-                    return True
-        except Exception:
-            pass
-        # Try More -> Connect
-        try:
-            more_btns = self.driver.find_elements(By.XPATH,
-                "//button[(@aria-label and contains(translate(@aria-label,'MORE','more'),'more')) or contains(translate(.,'MORE','more'),'more')]"
-            )
-            if more_btns:
-                more = more_btns[0]
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", more)
-                time.sleep(0.6)
+            # ULTRA SIMPLE: Just find ANY button with text "Conectar" or "Connect"
+            all_buttons = self.driver.find_elements(By.TAG_NAME, "button")
+            
+            logging.info(f"Found {len(all_buttons)} total buttons on page")
+            
+            for idx, btn in enumerate(all_buttons):
                 try:
-                    more.click()
-                except Exception:
-                    self.driver.execute_script("arguments[0].click();", more)
-                time.sleep(1.2)
-                # Dropdown item Connect
-                connect_items = self.driver.find_elements(By.XPATH,
-                    "//div[contains(@class,'artdeco-dropdown__content')]//div[@role='button' and (contains(translate(.,'CONNECT','connect'),'connect') or contains(translate(@aria-label,'CONNECT','connect'),'connect'))]"
-                )
-                if connect_items:
-                    try:
-                        connect_items[0].click()
-                    except Exception:
-                        self.driver.execute_script("arguments[0].click();", connect_items[0])
-                    time.sleep(1.2)
-                    return True
-        except Exception:
-            pass
+                    # Check if button is visible
+                    if not btn.is_displayed():
+                        continue
+                    
+                    # Get button text
+                    btn_text = btn.text.strip()
+                    
+                    # Log each button for debugging
+                    if btn_text:
+                        logging.debug(f"Button {idx}: '{btn_text}'")
+                    
+                    # EXACT MATCH - is this the Connect button?
+                    if btn_text == "Conectar" or btn_text == "Connect":
+                        logging.info(f"🎯 FOUND IT! Button with text: '{btn_text}'")
+                        
+                        # Highlight it
+                        try:
+                            self.driver.execute_script(
+                                "arguments[0].style.border='10px solid lime';"
+                                "arguments[0].style.backgroundColor='yellow';"
+                                "arguments[0].style.transform='scale(1.1)';",
+                                btn
+                            )
+                        except:
+                            pass
+                        
+                        # Scroll to it
+                        try:
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center', behavior: 'smooth'});", btn)
+                            time.sleep(1.0)
+                        except:
+                            pass
+                        
+                        self._update_debug_banner(f"✅ Clicking '{btn_text}' button NOW...")
+                        
+                        # TRY CLICKING IT - multiple methods
+                        clicked = False
+                        
+                        # Method 1: Regular click
+                        try:
+                            btn.click()
+                            logging.info("✅ Method 1 SUCCESS: Regular click worked!")
+                            clicked = True
+                        except Exception as e1:
+                            logging.warning(f"Method 1 failed: {e1}")
+                            
+                            # Method 2: JavaScript click
+                            try:
+                                self.driver.execute_script("arguments[0].click();", btn)
+                                logging.info("✅ Method 2 SUCCESS: JavaScript click worked!")
+                                clicked = True
+                            except Exception as e2:
+                                logging.warning(f"Method 2 failed: {e2}")
+                                
+                                # Method 3: Action chains
+                                try:
+                                    from selenium.webdriver.common.action_chains import ActionChains
+                                    actions = ActionChains(self.driver)
+                                    actions.move_to_element(btn).click().perform()
+                                    logging.info("✅ Method 3 SUCCESS: ActionChains click worked!")
+                                    clicked = True
+                                except Exception as e3:
+                                    logging.error(f"❌ ALL METHODS FAILED: {e3}")
+                        
+                        if clicked:
+                            self._update_debug_banner("✅ Button clicked! Waiting for modal...")
+                            time.sleep(2.0)  # Wait for modal to appear
+                            return True
+                        else:
+                            logging.error("❌ Could not click the button with any method")
+                            return False
+                    
+                except Exception as e:
+                    continue
+            
+            logging.warning("❌ No button with text 'Conectar' or 'Connect' found")
+            self._update_debug_banner("❌ Connect button not found")
+            
+        except Exception as e:
+            logging.error(f"❌ Error in _click_connect_on_profile: {e}")
+        
         return False
 
     def _card_has_pending(self, card) -> bool:
@@ -787,7 +1024,9 @@ class linkedinConnections:
                 try:
                     txt = (b.text or "").strip().lower()
                     aria = (b.get_attribute("aria-label") or "").strip().lower()
-                    if "pending" in txt or "pending" in aria or "withdraw" in txt or "withdraw" in aria:
+                    # English: "pending", "withdraw"
+                    # Spanish: "pendiente", "retirar"
+                    if "pending" in txt or "pending" in aria or "withdraw" in txt or "withdraw" in aria or "pendiente" in txt or "pendiente" in aria or "retirar" in txt or "retirar" in aria:
                         return True
                 except Exception:
                     continue
@@ -796,138 +1035,268 @@ class linkedinConnections:
         return False
 
     def _send_invite_with_note(self, message: str) -> bool:
-        """Handle the invite modal: Add note -> type -> Send. Returns True if sent."""
+        """Handle the invite modal: Click 'Send without note' by default."""
         try:
-            # Wait for any invite modal
-            modal = self.wait.until(EC.presence_of_element_located((
-                By.XPATH,
-                "//div[@id='artdeco-modal-outlet']//div[contains(@class,'artdeco-modal') and contains(@class,'send-invite')]"
-            )))
-            time.sleep(0.4)
+            # Wait for modal - try multiple selectors
+            logging.info("⏳ Waiting for invite modal...")
             
-            # Step 1: Click "Add a note" when present (first-stage dialog with question mark)
-            try:
-                add_note_btns = self.driver.find_elements(By.XPATH,
-                    "//div[@id='artdeco-modal-outlet']//div[contains(@class,'artdeco-modal') and contains(@class,'send-invite')]//button[contains(translate(.,'ADD NOTE','add note'),'add note') or contains(translate(@aria-label,'ADD NOTE','add note'),'add note')]"
-                )
-                if add_note_btns:
-                    try:
-                        add_note_btns[0].click()
-                    except Exception:
-                        self.driver.execute_script("arguments[0].click();", add_note_btns[0])
-                    time.sleep(0.5)
-            except Exception:
-                pass
+            modal = None
+            modal_selectors = [
+                (By.XPATH, "//div[@id='artdeco-modal-outlet']//div[contains(@class,'artdeco-modal')]"),
+                (By.CSS_SELECTOR, "div[role='dialog']"),
+                (By.XPATH, "//div[@role='dialog']"),
+                (By.CSS_SELECTOR, ".artdeco-modal"),
+                (By.XPATH, "//div[contains(@class,'send-invite')]"),
+            ]
             
-            # Step 2: Retry finding the textarea in the second modal variant
-            textarea = None
-            for attempt in range(5):
+            for idx, (by_type, selector) in enumerate(modal_selectors):
                 try:
-                    # Wait for the second header variant or textarea itself
-                    self.wait.until(EC.presence_of_element_located((
-                        By.XPATH,
-                        "//div[@id='artdeco-modal-outlet']//div[contains(@class,'artdeco-modal') and contains(@class,'send-invite')]//h2[contains(., 'Add a note to your invitation')] | //textarea[@name='message' or @id='custom-message']"
-                    )))
-                except Exception:
-                    time.sleep(0.3)
-                # Try locating textarea by both selectors
-                try:
-                    textarea = self.driver.find_element(By.CSS_SELECTOR, "textarea[name='message'], textarea#custom-message")
-                    if textarea.is_displayed():
-                        break
-                except Exception:
-                    textarea = None
-                time.sleep(0.3)
-            
-            if textarea:
-                try:
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", textarea)
-                except Exception:
-                    pass
-                try:
-                    textarea.clear()
-                except Exception:
-                    pass
-                try:
-                    textarea.click()
-                except Exception:
-                    pass
-                try:
-                    textarea.send_keys(message)
-                    time.sleep(0.5)
-                except Exception:
-                    logging.warning("Could not type into invite textarea")
-            else:
-                logging.warning("Invite textarea not found; will attempt to send anyway")
-            
-            # Step 3: Click enabled Send button (not 'Send without a note') with retries
-            send_clicked = False
-            for attempt in range(4):
-                try:
-                    send_btn = WebDriverWait(self.driver, 5).until(EC.element_to_be_clickable((
-                        By.XPATH,
-                        "//div[@id='artdeco-modal-outlet']//div[contains(@class,'artdeco-modal') and contains(@class,'send-invite')]//button[not(contains(., 'Send without a note')) and (contains(translate(.,'SEND','send'),'send') or contains(translate(@aria-label,'SEND','send'),'send')) and not(contains(@class,'artdeco-button--disabled'))]"
-                    )))
-                    try:
-                        send_btn.click()
-                    except Exception:
-                        self.driver.execute_script("arguments[0].click();", send_btn)
-                    time.sleep(0.6)
-                    send_clicked = True
+                    logging.debug(f"Trying modal selector {idx + 1}/{len(modal_selectors)}: {selector}")
+                    modal = WebDriverWait(self.driver, 3).until(
+                        EC.presence_of_element_located((by_type, selector))
+                    )
+                    logging.info(f"✅ Found modal using selector {idx + 1}: {selector}")
                     break
-                except Exception:
-                    # If still disabled, wait a bit more after typing
-                    time.sleep(0.4)
+                except Exception as e:
+                    logging.debug(f"Selector {idx + 1} failed: {e}")
+                    continue
             
-            if send_clicked:
-                return True
+            if not modal:
+                logging.error("❌ Could not find invitation modal with any selector")
+                return False
             
-            # Step 4: As a last resort, send without a note if available
+            time.sleep(1.0)  # Give modal time to fully render
+            
+            logging.info("✅ Modal detected! Looking for 'Enviar sin nota' button...")
+            
+            # DIRECT APPROACH: Use aria-label which LinkedIn always sets
             try:
-                no_note_btn = self.driver.find_elements(By.XPATH,
-                    "//div[@id='artdeco-modal-outlet']//div[contains(@class,'artdeco-modal') and contains(@class,'send-invite')]//button[contains(., 'Send without a note')]"
+                # Find button by aria-label (most reliable for LinkedIn)
+                send_no_note_btn = modal.find_element(By.XPATH,
+                    ".//button[@aria-label='Enviar sin nota' or @aria-label='Send without a note']"
                 )
-                if no_note_btn:
+                
+                logging.info(f"🎯 FOUND IT! Using aria-label: {send_no_note_btn.get_attribute('aria-label')}")
+                
+                # Highlight it
+                try:
+                    self.driver.execute_script(
+                        "arguments[0].style.border='10px solid lime';"
+                        "arguments[0].style.backgroundColor='yellow';"
+                        "arguments[0].style.transform='scale(1.1)';",
+                        send_no_note_btn
+                    )
+                except:
+                    pass
+                
+                time.sleep(0.8)
+                
+                # Click it - try multiple methods
+                clicked = False
+                
+                # Method 1: Regular click
+                try:
+                    send_no_note_btn.click()
+                    logging.info("✅ Method 1: Regular click worked!")
+                    clicked = True
+                except Exception as e1:
+                    logging.warning(f"Method 1 failed: {e1}")
+                    
+                    # Method 2: JavaScript click
                     try:
-                        no_note_btn[0].click()
-                    except Exception:
-                        self.driver.execute_script("arguments[0].click();", no_note_btn[0])
-                    time.sleep(0.5)
+                        self.driver.execute_script("arguments[0].click();", send_no_note_btn)
+                        logging.info("✅ Method 2: JS click worked!")
+                        clicked = True
+                    except Exception as e2:
+                        logging.warning(f"Method 2 failed: {e2}")
+                        
+                        # Method 3: ActionChains
+                        try:
+                            from selenium.webdriver.common.action_chains import ActionChains
+                            actions = ActionChains(self.driver)
+                            actions.move_to_element(send_no_note_btn).click().perform()
+                            logging.info("✅ Method 3: ActionChains worked!")
+                            clicked = True
+                        except Exception as e3:
+                            logging.error(f"❌ ALL METHODS FAILED: {e3}")
+                
+                if clicked:
+                    time.sleep(1.5)
+                    logging.info("🎉 Connection invitation sent successfully!")
                     return True
-            except Exception:
-                pass
+                else:
+                    return False
+                    
+            except Exception as e:
+                logging.warning(f"Could not find button by aria-label: {e}")
+                
+                # FALLBACK: Scan all buttons and check both text and aria-label
+                logging.info("Fallback: Scanning all modal buttons...")
+                all_modal_buttons = modal.find_elements(By.TAG_NAME, "button")
+                
+                logging.info(f"Found {len(all_modal_buttons)} buttons in modal")
+                
+                for idx, btn in enumerate(all_modal_buttons):
+                    try:
+                        # Get both text and aria-label
+                        btn_text = btn.text.strip().lower()
+                        aria_label = (btn.get_attribute("aria-label") or "").strip().lower()
+                        
+                        logging.info(f"  Button {idx}: text='{btn_text}' aria-label='{aria_label}'")
+                        
+                        # Check if it's the send without note button
+                        is_target = False
+                        
+                        # Spanish
+                        if ("enviar" in btn_text and "sin" in btn_text and "nota" in btn_text) or \
+                           ("enviar" in aria_label and "sin" in aria_label and "nota" in aria_label):
+                            is_target = True
+                        
+                        # English
+                        if ("send" in btn_text and "without" in btn_text) or \
+                           ("send" in aria_label and "without" in aria_label):
+                            is_target = True
+                        
+                        if is_target:
+                            logging.info(f"🎯 Found it via fallback!")
+                            
+                            # Highlight and click
+                            try:
+                                self.driver.execute_script(
+                                    "arguments[0].style.border='10px solid lime';"
+                                    "arguments[0].style.backgroundColor='yellow';",
+                                    btn
+                                )
+                            except:
+                                pass
+                            
+                            time.sleep(0.5)
+                            
+                            try:
+                                btn.click()
+                                logging.info("✅ Fallback click succeeded!")
+                                time.sleep(1.5)
+                                return True
+                            except:
+                                try:
+                                    self.driver.execute_script("arguments[0].click();", btn)
+                                    logging.info("✅ Fallback JS click succeeded!")
+                                    time.sleep(1.5)
+                                    return True
+                                except Exception as e:
+                                    logging.error(f"❌ Fallback click failed: {e}")
+                        
+                    except Exception as e:
+                        logging.debug(f"Error checking button {idx}: {e}")
+                        continue
             
+            logging.warning("❌ No 'Enviar sin nota' button found")
             return False
+            
         except Exception as e:
-            logging.debug(f"Invite modal not handled: {e}")
+            logging.error(f"❌ Error handling invite modal: {e}")
+            import traceback
+            logging.error(traceback.format_exc())
             return False
+
+
 
     def _click_connect_from_card_or_profile(self, card, name: str, company: str, message_template: str) -> bool:
         """Try Connect on card; if not, open profile and try there. Then send invite with note."""
+        # Visual Debug: Highlight card being processed
+        try:
+            self.driver.execute_script("arguments[0].style.border='4px solid orange';", card)
+        except Exception:
+            pass
+
         # Skip if card indicates Pending (do not open the profile in that case)
         try:
             if self._card_has_pending(card):
+                logging.info(f"Card for {name} has pending invite. Skipping.")
                 return False
         except Exception:
             pass
+        
         message = self._format_message(message_template, name, company)
-        # Try connect button within card
+        
+        # Try connect button within card - SIMPLIFIED APPROACH
         try:
-            btns = card.find_elements(By.XPATH,
-                ".//button[contains(translate(.,'CONNECT','connect'),'connect') or contains(translate(@aria-label,'CONNECT','connect'),'connect') or contains(translate(@aria-label,'INVITE','invite'),'invite')]"
-            )
-            btns = [b for b in btns if b.is_displayed() and b.is_enabled()]
-            if btns:
-                self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btns[0])
-                time.sleep(0.5)
+            logging.info(f"🔍 Looking for Connect button in card for {name}")
+            
+            # Get all buttons and links in the card
+            all_buttons = card.find_elements(By.TAG_NAME, "button") + card.find_elements(By.TAG_NAME, "a")
+            
+            logging.info(f"Found {len(all_buttons)} buttons/links in card")
+            
+            for idx, btn in enumerate(all_buttons):
                 try:
-                    btns[0].click()
+                    # Check visibility first
+                    if not btn.is_displayed():
+                        continue
+                    
+                    # Get button text (exact, with original case)
+                    btn_text = btn.text.strip()
+                    
+                    # Log for debugging
+                    if btn_text:
+                        logging.debug(f"Card button {idx}: '{btn_text}'")
+                    
+                    # EXACT MATCH - is this the Connect button?
+                    if btn_text == "Conectar" or btn_text == "Connect":
+                        logging.info(f"🎯 FOUND Connect button in card: '{btn_text}'")
+                        
+                        # Visual Debug: Highlight button found
+                        try:
+                            self.driver.execute_script(
+                                "arguments[0].style.border='5px solid lime';"
+                                "arguments[0].style.backgroundColor='yellow';",
+                                btn
+                            )
+                        except Exception:
+                            pass
+                        
+                        # Scroll into view
+                        try:
+                            self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", btn)
+                            time.sleep(0.5)
+                        except:
+                            pass
+                        
+                        # Click it
+                        clicked = False
+                        try:
+                            btn.click()
+                            logging.info("✅ Clicked Connect button on card (method 1)")
+                            clicked = True
+                        except Exception as e1:
+                            logging.debug(f"Method 1 failed: {e1}")
+                            try:
+                                self.driver.execute_script("arguments[0].click();", btn)
+                                logging.info("✅ Clicked Connect button on card (method 2 - JS)")
+                                clicked = True
+                            except Exception as e2:
+                                logging.error(f"❌ Could not click card button: {e2}")
+                        
+                        
+                        if clicked:
+                            logging.info("⏰ Waiting for modal to appear...")
+                            time.sleep(1.5)
+                            logging.info("📞 Calling _send_invite_with_note...")
+                            result = self._send_invite_with_note(message)
+                            logging.info(f"📬 _send_invite_with_note returned: {result}")
+                            return result
+                        else:
+                            # If we found the button but couldn't click, don't try profile
+                            return False
+                    
                 except Exception:
-                    self.driver.execute_script("arguments[0].click();", btns[0])
-                time.sleep(1.0)
-                return self._send_invite_with_note(message)
-        except Exception:
-            pass
+                    continue
+            
+            logging.info("No Connect button found in card, will try opening profile...")
+            
+        except Exception as e:
+            logging.error(f"Error searching card buttons: {e}")
+        
         # Fallback: open profile
         _, profile_url = self._extract_name_and_profile(card)
         if profile_url and self._open_profile_in_new_tab(profile_url):
@@ -941,7 +1310,7 @@ class linkedinConnections:
             return sent
         return False
 
-    def send_connection_requests_with_rules(self, company: str, message_template: str, target_min: int = 10, target_max: int = 15, max_pages: int = 6) -> bool:
+    def send_connection_requests_with_rules(self, company: str, message_template: str, target_min: int = 10, target_max: int = 15, max_pages: int = 6, stop_check_callback=None) -> bool:
         """Send 10-15 invites per company to verified, current employees using 3-path strategy."""
         try:
             target_count = random.randint(target_min, target_max)
@@ -950,27 +1319,44 @@ class linkedinConnections:
             logging.info(f"Targeting {target_count} invites for {company}")
 
             while sent < target_count and current_page <= max_pages:
+                if stop_check_callback and stop_check_callback():
+                    logging.info("Stop signal received in send_connection_requests_with_rules. Halting.")
+                    return False
+
                 # Load and collect cards
                 self._scroll_to_load_all_cards()
                 cards = self._find_people_cards()
                 logging.info(f"Processing {len(cards)} cards on page {current_page}")
 
                 for card in cards:
+                    if stop_check_callback and stop_check_callback():
+                        logging.info("Stop signal received during card processing. Halting.")
+                        return False
+
                     if sent >= target_count:
                         break
-                    # Skip if not verified
-                    if not self._is_verified_card(card):
-                        continue
+                    
                     # Extract name and profile
                     name, profile_url = self._extract_name_and_profile(card)
+                    
+                    # Update banner with current action
+                    self._update_debug_banner(f"Processing: {name or 'Unknown'}")
+                    
                     if not name and not profile_url:
+                        logging.warning("Could not extract name/url from card")
                         continue
-                    # Confirm current company
-                    if not self._card_current_company_matches(card, company):
+                    
+                    # Confirm current company (skip if company is empty/general search)
+                    if company and not self._card_current_company_matches(card, company):
                         continue
+                    
                     # Avoid duplicates by profile URL
                     if profile_url and profile_url in self.processed_profiles:
+                        logging.info(f"Skipping duplicate: {name}")
                         continue
+                    
+                    logging.info(f"Attempting to connect with {name}...")
+                    
                     # Try sending invite
                     if self._click_connect_from_card_or_profile(card, name or "there", company, message_template):
                         sent += 1
@@ -999,7 +1385,7 @@ class linkedinConnections:
             logging.error(f"Error in send_connection_requests_with_rules: {e}")
             return False
 
-    def send_connection_requests(self, message: str, max_connections: int = 15, max_pages: int = 8):
+    def send_connection_requests(self, message: str, max_connections: int = 15, max_pages: int = 8, stop_check_callback=None):
         """Enhanced connection request method with better button detection"""
         try:
             current_page = 1
@@ -1008,6 +1394,10 @@ class linkedinConnections:
             
             # Loop through pages until max_pages or max_connections reached
             while current_page <= max_pages and company_connection_count < max_connections:
+                if stop_check_callback and stop_check_callback():
+                    logging.info("Stop signal received. Halting connection requests.")
+                    break
+
                 logging.info(f"Processing page {current_page} of search results")
                 
                 # Close any blocking modals first
@@ -1272,9 +1662,13 @@ class linkedinConnections:
             logging.warning(f"Search results check failed: {debug_error}")
             return True  # Assume it's okay and continue
 
-    def process_company(self, company: str, message: str, max_connections: int = 25, max_pages: int = 5):
+    def process_company(self, company: str, message: str, max_connections: int = 25, max_pages: int = 5, stop_check_callback=None):
         """Complete workflow for one company - now enforces verified+current and 10-15 invites via new strategy"""
         try:
+            if stop_check_callback and stop_check_callback():
+                logging.info("Stop signal received at start of process_company.")
+                return False
+
             # CRITICAL FIX: Reset connection count for each company
             self.connection_count = 0
             
@@ -1304,6 +1698,10 @@ class linkedinConnections:
             if not self.check_search_results(company):
                 logging.warning(f"No valid search results detected for {company}; proceeding with robust invite flow anyway...")
             
+            if stop_check_callback and stop_check_callback():
+                logging.info("Stop signal received before sending requests.")
+                return False
+
             # Step 5: Send 10-15 connection requests to verified, current employees using 3-path flow
             logging.info(f"Starting to send connection requests (verified & current) for {company}")
             connection_success = self.send_connection_requests_with_rules(
@@ -1311,7 +1709,8 @@ class linkedinConnections:
                 message_template=message,
                 target_min=10,
                 target_max=15,
-                max_pages=max_pages
+                max_pages=max_pages,
+                stop_check_callback=stop_check_callback
             )
             
             if connection_success:
@@ -1323,6 +1722,73 @@ class linkedinConnections:
                 
         except Exception as e:
             logging.error(f"Error processing company {company}: {str(e)}")
+            return False
+
+    def process_general_search(self, search_term: str, message: str, max_connections: int = 25, max_pages: int = 5, stop_check_callback=None):
+        """Workflow for general search (e.g. 'Recruiter') without company filter"""
+        try:
+            self._update_debug_banner(f"Starting General Search: {search_term}")
+            time.sleep(1)
+            
+            if stop_check_callback and stop_check_callback():
+                logging.info("Stop signal received at start of process_general_search.")
+                return False
+
+            self.connection_count = 0
+            logging.info(f"Starting general search for: {search_term}")
+            
+            # Step 1: Search for the term
+            self._update_debug_banner("Typing search term...")
+            if not self.search_company(search_term): # Reusing search_company as it just types in the box
+                logging.error(f"Failed to search for {search_term}")
+                return False
+            
+            time.sleep(2)
+            
+            # Step 2: Select People filter
+            self._update_debug_banner("Selecting People filter...")
+            if not self.select_people_filter():
+                logging.error(f"Failed to select People filter")
+                return False
+            
+            time.sleep(2)
+            
+            # Step 3: Apply Location Filter only (skip company filter)
+            logging.info("Applying location filter: Argentina")
+            self._apply_location_filters_in_session(["Argentina"])
+            
+            # Click Show Results
+            try:
+                self._update_debug_banner("Clicking Show Results...")
+                show_results = self.wait.until(EC.element_to_be_clickable((
+                    By.CSS_SELECTOR,
+                    "button.reusable-search-filters-buttons__submit-button, button[aria-label='Apply current filters to show results']"
+                )))
+                show_results.click()
+                time.sleep(4)
+            except Exception as e:
+                logging.warning(f"Could not click show results (might not be needed): {e}")
+
+            if stop_check_callback and stop_check_callback():
+                logging.info("Stop signal received before sending requests.")
+                return False
+            
+            # Step 4: Send connection requests (passing empty company to skip match check)
+            logging.info(f"Starting to send connection requests for search: {search_term}")
+            self._update_debug_banner("Starting connection loop...")
+            connection_success = self.send_connection_requests_with_rules(
+                company="", # Empty company to skip "current company" check
+                message_template=message,
+                target_min=50,  # INCREASED from 10 to 50
+                target_max=100,  # INCREASED from 15 to 100
+                max_pages=max_pages,
+                stop_check_callback=stop_check_callback
+            )
+            
+            return connection_success
+
+        except Exception as e:
+            logging.error(f"Error processing general search {search_term}: {str(e)}")
             return False
 
     def cleanup(self):

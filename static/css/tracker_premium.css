@@ -54,7 +54,8 @@ h2 {
     background: white;
     border-radius: 16px;
     border: 2px solid #e5e7eb;
-    min-height: 600px;
+    height: calc(100vh - 200px);
+    min-height: 500px;
     display: flex;
     flex-direction: column;
     transition: all 0.3s ease;
@@ -131,7 +132,7 @@ h2 {
     padding: 1rem;
     flex: 1;
     overflow-y: auto;
-    min-height: 400px;
+    overflow-x: hidden;
 }
 
 /* Job Cards */
@@ -318,3 +319,32 @@ h2 {
     padding: 2rem;
     font-style: italic;
 }
+/* Compact View Styles */
+.job-card.compact {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+}
+
+.job-card.compact .job-card-title {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+}
+
+.job-card.compact .job-card-company {
+    font-size: 0.8rem;
+    margin-bottom: 0.25rem;
+}
+
+.job-card.compact .location,
+.job-card.compact .salary,
+.job-card.compact .text-muted.small,
+.job-card.compact .text-success.small {
+    display: none;
+}
+
+.job-card.compact .job-card-footer {
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid #f3f4f6;
+}
+

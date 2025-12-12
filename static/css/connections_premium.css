@@ -222,3 +222,12 @@ h2 {
         opacity: .5;
     }
 }
+/* Group Hover for Delete Button */
+.group-hover:hover .btn-link {
+    opacity: 1 !important;
+}
+
+.group-hover .btn-link {
+    opacity: 0.3;
+    transition: opacity 0.2s ease-in-out;
+}

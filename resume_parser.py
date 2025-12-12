@@ -121,37 +121,80 @@ class resumeParser:
     def parse_date_range(self, date_string):
        
         try:
-           
+            # Normalize separators
             date_string = date_string.replace('–', '-').replace('—', '-').replace(' - ', '-')
             
+            # Month name mapping
+            month_map = {
+                'jan': 1, 'january': 1,
+                'feb': 2, 'february': 2,
+                'mar': 3, 'march': 3,
+                'apr': 4, 'april': 4,
+                'may': 5,
+                'jun': 6, 'june': 6,
+                'jul': 7, 'july': 7,
+                'aug': 8, 'august': 8,
+                'sep': 9, 'sept': 9, 'september': 9,
+                'oct': 10, 'october': 10,
+                'nov': 11, 'november': 11,
+                'dec': 12, 'december': 12
+            }
             
+            # Enhanced date patterns with month names
             date_patterns = [
-                r'(\d{1,2})/(\d{4})\s*-\s*(\d{1,2})/(\d{4})',  # MM/YYYY - MM/YYYY
-                r'(\d{1,2})/(\d{4})\s*–\s*(\d{1,2})/(\d{4})',  # MM/YYYY – MM/YYYY
-                r'(\d{4})\s*-\s*(\d{4})',  # YYYY - YYYY
-                r'(\d{4})\s*–\s*(\d{4})',  # YYYY – YYYY
+                (r'(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*[\s,]+(\d{4})\s*-\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*[\s,]+(\d{4})', 'month_year'),
+                (r'(jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*[\s,]+(\d{4})\s*-\s*(?:present|current|today|now)', 'month_year_present'),
+                (r'(\d{1,2})/(\d{4})\s*-\s*(\d{1,2})/(\d{4})', 'mm_yyyy'),
+                (r'(\d{1,2})/(\d{4})\s*-\s*(?:present|current|today|now)', 'mm_yyyy_present'),
+                (r'(\d{4})\s*-\s*(\d{4})', 'yyyy'),
+                (r'(\d{4})\s*-\s*(?:present|current|today|now)', 'yyyy_present'),
             ]
             
-            for pattern in date_patterns:
-                match = re.search(pattern, date_string)
+            for pattern, pattern_type in date_patterns:
+                match = re.search(pattern, date_string, re.IGNORECASE)
                 if match:
                     groups = match.groups()
-                    if len(groups) == 4:  # MM/YYYY - MM/YYYY format
-                        start_month, start_year, end_month, end_year = groups
-                        start_date = datetime(int(start_year), int(start_month), 1)
-                        end_date = datetime(int(end_year), int(end_month), 1)
-                    elif len(groups) == 2:  # YYYY - YYYY format
-                        start_year, end_year = groups
-                        start_date = datetime(int(start_year), 1, 1)
-                        end_date = datetime(int(end_year), 12, 31)
                     
-                  
-                    if 'present' in date_string.lower() or 'current' in date_string.lower():
-                        end_date = datetime.now()
+                    try:
+                        if pattern_type == 'month_year':
+                            start_month_str, start_year, end_month_str, end_year = groups
+                            start_month = month_map.get(start_month_str.lower()[:3], 1)
+                            end_month = month_map.get(end_month_str.lower()[:3], 12)
+                            start_date = datetime(int(start_year), start_month, 1)
+                            end_date = datetime(int(end_year), end_month, 1)
+                        
+                        elif pattern_type == 'month_year_present':
+                            start_month_str, start_year = groups
+                            start_month = month_map.get(start_month_str.lower()[:3], 1)
+                            start_date = datetime(int(start_year), start_month, 1)
+                            end_date = datetime.now()
+                        
+                        elif pattern_type == 'mm_yyyy':
+                            start_month, start_year, end_month, end_year = groups
+                            start_date = datetime(int(start_year), int(start_month), 1)
+                            end_date = datetime(int(end_year), int(end_month), 1)
+                        
+                        elif pattern_type == 'mm_yyyy_present':
+                            start_month, start_year = groups
+                            start_date = datetime(int(start_year), int(start_month), 1)
+                            end_date = datetime.now()
+                        
+                        elif pattern_type == 'yyyy':
+                            start_year, end_year = groups
+                            start_date = datetime(int(start_year), 1, 1)
+                            end_date = datetime(int(end_year), 12, 31)
+                        
+                        elif pattern_type == 'yyyy_present':
+                            start_year = groups[0]
+                            start_date = datetime(int(start_year), 1, 1)
+                            end_date = datetime.now()
+                        
+                        years_diff = (end_date - start_date).days / 365.25
+                        return max(years_diff, 0)
                     
-                   
-                    years_diff = (end_date - start_date).days / 365.25
-                    return max(years_diff, 0)
+                    except (ValueError, IndexError) as e:
+                        print(f"Error parsing date components: {str(e)}")
+                        continue
             
             return 0
         except Exception as e:
@@ -194,63 +237,97 @@ class resumeParser:
         total_years = 0
         lines = text.split('\n')
         
-        
+        # Track if we're in experience section (helpful but not required)
         in_experience_section = False
+        in_education_section = False
         i = 0
         
         while i < len(lines):
             line = lines[i].strip()
             
-            
-            if re.match(r'^experience\s*$', line.lower()) or 'experience' in line.lower():
+            # Detect section markers
+            if re.match(r'^experience\s*$', line.lower()) or ('professional' in line.lower() and 'experience' in line.lower()):
                 in_experience_section = True
+                in_education_section = False
                 i += 1
                 continue
             
-            
             if re.match(r'^education\s*$', line.lower()) or re.match(r'^projects?\s*$', line.lower()):
-                break
+                in_education_section = True
+                in_experience_section = False
             
-            if in_experience_section and line:
-               
+            # Skip lines in education section
+            if in_education_section:
+                i += 1
+                continue
+            
+            if line:
+                # Get next few lines for context
                 next_lines = []
-                for j in range(1, min(4, len(lines) - i)):  # Check next 3 lines
+                for j in range(1, min(4, len(lines) - i)):
                     if i + j < len(lines):
                         next_lines.append(lines[i + j].strip())
                 
-               
-                for next_line in next_lines:
-                   
+                # Look for date patterns in current line or next lines
+                all_context = [line] + next_lines
+                
+                for context_index, context_line in enumerate(all_context):
+                    # Enhanced date patterns to catch more formats
                     date_patterns = [
                         r'\d{1,2}/\d{4}\s*[–—-]\s*\d{1,2}/\d{4}',  # MM/YYYY – MM/YYYY
-                        r'\d{1,2}/\d{4}\s*[–—-]\s*(?:present|current)',  # MM/YYYY – Present
+                        r'\d{1,2}/\d{4}\s*[–—-]\s*(?:present|current|today|now)',  # MM/YYYY – Present
                         r'\d{4}\s*[–—-]\s*\d{4}',  # YYYY – YYYY
-                        r'\d{4}\s*[–—-]\s*(?:present|current)',  # YYYY – Present
+                        r'\d{4}\s*[–—-]\s*(?:present|current|today|now)',  # YYYY – Present
+                        r'(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s,]+\d{4}\s*[–—-]\s*(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s,]+\d{4}',  # Month YYYY - Month YYYY
+                        r'(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*[\s,]+\d{4}\s*[–—-]\s*(?:present|current)',  # Month YYYY - Present
                     ]
                     
                     for pattern in date_patterns:
-                        match = re.search(pattern, next_line, re.IGNORECASE)
+                        match = re.search(pattern, context_line, re.IGNORECASE)
                         if match:
                             date_range = match.group()
                             
+                            # Build job context from current line and matched line
+                            job_context = line
+                            if context_index > 0:
+                                job_context += " " + context_line
                             
-                            job_context = line + " " + next_line
-                            if any(intern_word in job_context.lower() for intern_word in ['intern', 'internship']):
-                                print(f"Skipping internship: {line} - {date_range}")
-                                break
+                            # Skip if it's an internship or education
+                            skip_keywords = [
+                                'intern', 'internship', 'student', 'university',
+                                'college', 'degree', 'bachelor', 'master', 'phd',
+                                'education', 'course', 'certification'
+                            ]
                             
-                            years_for_job = self.parse_date_range(date_range)
-                            total_years += years_for_job
-                            print(f"Found work experience: {line} - {date_range} = {years_for_job:.1f} years")
-                            break
+                            should_skip = any(keyword in job_context.lower() for keyword in skip_keywords)
+                            
+                            # Prioritize lines with job-related keywords
+                            job_keywords = [
+                                'engineer', 'developer', 'analyst', 'manager', 'specialist',
+                                'administrator', 'consultant', 'architect', 'lead', 'senior',
+                                'junior', 'associate', 'coordinator', 'director', 'technician'
+                            ]
+                            
+                            has_job_title = any(keyword in job_context.lower() for keyword in job_keywords)
+                            
+                            # Only count if it looks like work experience
+                            if not should_skip or (has_job_title and not 'intern' in job_context.lower()):
+                                years_for_job = self.parse_date_range(date_range)
+                                if years_for_job > 0:  # Only count positive years
+                                    total_years += years_for_job
+                                    print(f"Found work experience: {line} - {date_range} = {years_for_job:.1f} years")
+                            else:
+                                print(f"Skipping non-work experience: {job_context[:50]}... - {date_range}")
+                            
+                            break  # Move to next line once we found a date
                     else:
                         continue
-                    break  
+                    break  # Move to next line once we found a date
             
             i += 1
         
-        
-        return min(total_years, 15) 
+        # Cap at realistic maximum
+        return min(total_years, 20) 
 
     def extract_education(self, text):
         """Extract education information, excluding internship locations"""

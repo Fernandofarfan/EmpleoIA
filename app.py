@@ -605,56 +605,98 @@ def run_linkedin_scraper_with_matching(credentials, searches, filters=None):
             except Exception as cleanup_error:
                 logger.error(f"Cleanup error: {cleanup_error}")
 
-def run_connection_requests(credentials, company_list, message_template):
+def run_connection_requests(credentials, company_list, message_template, search_mode='companies', search_term=''):
     try:
         job_status['connection_requests']['status'] = 'running'
         job_status['connection_requests']['progress'] = 5
         job_status['connection_requests']['message'] = 'Starting LinkedIn connection bot...'
         
+        linkedin_email = credentials.get('linkedin_email')
+        linkedin_password = credentials.get('linkedin_password')
         linkedin_token = credentials.get('linkedin_token')
         total_connections_sent = 0
         
-        # Process each company with a fresh browser instance
-        for index, company in enumerate(company_list):
+        # Determine items to process based on mode
+        items_to_process = []
+        if search_mode == 'general':
+            items_to_process = [search_term]
+        else:
+            items_to_process = company_list
+
+        # Process each item with a fresh browser instance
+        for index, item in enumerate(items_to_process):
+            if job_status['connection_requests'].get('stop_requested'):
+                job_status['connection_requests']['message'] = 'Process stopped by user.'
+                job_status['connection_requests']['status'] = 'stopped'
+                break
+
             bot = None
             
-            search_progress_base = 20 + (index / len(company_list)) * 70
+            search_progress_base = 20 + (index / len(items_to_process)) * 70
             job_status['connection_requests']['progress'] = int(search_progress_base)
             
-            job_status['connection_requests']['message'] = f"Processing connection requests for {company}..."
+            if search_mode == 'general':
+                job_status['connection_requests']['message'] = f"Searching for: {item}..."
+            else:
+                job_status['connection_requests']['message'] = f"Processing connection requests for {item}..."
             
             try:
-                bot = linkedinConnections(linkedin_token)
+                bot = linkedinConnections(email=linkedin_email, password=linkedin_password, li_at_token=linkedin_token)
                 
-                if not bot.login_with_cookie():
-                    job_status['connection_requests']['message'] = f"Login failed for {company}"
-                    continue
+                login_success = False
+                if linkedin_email and linkedin_password:
+                    if bot.login_with_credentials():
+                        login_success = True
+                
+                if not login_success and linkedin_token:
+                    if bot.login_with_cookie():
+                        login_success = True
+                        
+                if not login_success:
+                    job_status['connection_requests']['message'] = f"Login failed. Stopping process."
+                    logger.error("Login failed. Aborting remaining items.")
+                    break
                     
-                # Process company
-                # Pass raw template; per-person formatting (with {name} and {company}) happens in the bot
-                success = bot.process_company(
-                    company=company, 
-                    message=message_template,
-                    max_connections=25,
-                    max_pages=5
-                )
+                # Process item
+                success = False
+                if search_mode == 'general':
+                    success = bot.process_general_search(
+                        search_term=item,
+                        message=message_template,
+                        max_connections=25,
+                        max_pages=5,
+                        stop_check_callback=lambda: job_status['connection_requests'].get('stop_requested', False)
+                    )
+                else:
+                    success = bot.process_company(
+                        company=item, 
+                        message=message_template,
+                        max_connections=25,
+                        max_pages=5,
+                        stop_check_callback=lambda: job_status['connection_requests'].get('stop_requested', False)
+                    )
+                
+                if job_status['connection_requests'].get('stop_requested'):
+                    job_status['connection_requests']['message'] = 'Process stopped by user.'
+                    job_status['connection_requests']['status'] = 'stopped'
+                    break
                 
                 if success:
-                    job_status['connection_requests']['message'] = f"Successfully processed {company}"
+                    job_status['connection_requests']['message'] = f"Successfully processed {item}"
                     total_connections_sent += bot.total_connections_sent
                 else:
-                    job_status['connection_requests']['message'] = f"Failed to process {company}"
+                    job_status['connection_requests']['message'] = f"Failed to process {item}"
                     
             except Exception as e:
-                logger.error(f"Unexpected error processing {company}: {str(e)}")
-                job_status['connection_requests']['message'] = f"Error with {company}: {str(e)}"
+                logger.error(f"Unexpected error processing {item}: {str(e)}")
+                job_status['connection_requests']['message'] = f"Error with {item}: {str(e)}"
             finally:
-                # Always clean up the browser before moving to next company
+                # Always clean up the browser before moving to next item
                 if bot:
                     bot.cleanup()
                     bot = None
                     
-                # Add delay between companies
+                # Add delay between items
                 if index < len(company_list) - 1:  # Don't delay after the last company
                     delay = random.uniform(5, 10)
                     time.sleep(delay)
@@ -791,6 +833,36 @@ def api_save_applications():
         
     except Exception as e:
         logger.error(f"Error saving applications: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/exclude_company_from_networking', methods=['POST'])
+def exclude_company_from_networking():
+    try:
+        company_name = request.form.get('company_name')
+        if not company_name:
+            return jsonify({'success': False, 'error': 'Company name required'}), 400
+            
+        # Remove from session if present
+        if 'applied_companies' in session:
+            if company_name in session['applied_companies']:
+                session['applied_companies'].remove(company_name)
+                session.modified = True
+                
+        if 'companies' in session:
+            if company_name in session['companies']:
+                session['companies'].remove(company_name)
+                session.modified = True
+        
+        # Add to database exclusion list
+        success = db_manager.exclude_company(company_name)
+        
+        if success:
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Database error'}), 500
+            
+    except Exception as e:
+        logger.error(f"Error excluding company: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/connections')
@@ -1770,31 +1842,51 @@ def start_universal_scraper():
 
 
 
+@app.route('/stop_connection_requests', methods=['POST'])
+def stop_connection_requests():
+    if 'connection_requests' in job_status:
+        job_status['connection_requests']['stop_requested'] = True
+        job_status['connection_requests']['message'] = 'Stopping process...'
+        flash('Stopping connection requests...', 'warning')
+    return redirect(url_for('connections'))
+
 @app.route('/start_connection_requests', methods=['POST'])
 def start_connection_requests():
+    linkedin_email = request.form.get('linkedin_email')
+    linkedin_password = request.form.get('linkedin_password')
     linkedin_token = request.form.get('linkedin_token')
+    
+    search_mode = request.form.get('search_mode', 'companies') # 'companies' or 'general'
+    search_term = request.form.get('search_term', '')
     company_list = request.form.getlist('company_selection')
     message_template = request.form.get('message_template', '')
     
-    if not linkedin_token:
-        flash('Please provide LinkedIn authentication token', 'danger')
+    if not (linkedin_email and linkedin_password) and not linkedin_token:
+        flash('Please provide LinkedIn credentials (email/password) or token', 'danger')
         return redirect(url_for('connections'))
         
-    if not company_list:
+    if search_mode == 'companies' and not company_list:
         flash('Please select at least one company', 'danger')
+        return redirect(url_for('connections'))
+        
+    if search_mode == 'general' and not search_term:
+        flash('Please enter a search term', 'danger')
         return redirect(url_for('connections'))
     
     job_status['connection_requests'] = {
         'status': 'idle', 
         'progress': 0, 
-        'message': 'Starting...'
+        'message': 'Starting...',
+        'stop_requested': False
     }
     
     thread = threading.Thread(
         target=run_connection_requests,
         args=({
+            'linkedin_email': linkedin_email,
+            'linkedin_password': linkedin_password,
             'linkedin_token': linkedin_token
-        }, company_list, message_template)
+        }, company_list, message_template, search_mode, search_term)
     )
     thread.daemon = True
     thread.start()

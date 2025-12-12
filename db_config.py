@@ -158,20 +158,68 @@ class DatabaseManager:
             if connection:
                 connection.close()
 
+    def create_networking_exclusions_table(self):
+        """Create table for excluded companies in networking"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor()
+            
+            query = """
+            CREATE TABLE IF NOT EXISTS networking_exclusions (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                company_name VARCHAR(255) NOT NULL UNIQUE,
+                excluded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+            cursor.execute(query)
+            connection.commit()
+            return True
+        except mysql.connector.Error as err:
+            logger.error(f"Error creating exclusions table: {err}")
+            return False
+        finally:
+            if cursor: cursor.close()
+            if connection: connection.close()
+
+    def exclude_company(self, company_name):
+        """Add a company to the exclusion list"""
+        connection = None
+        cursor = None
+        try:
+            connection = self.get_connection()
+            cursor = connection.cursor()
+            
+            query = "INSERT IGNORE INTO networking_exclusions (company_name) VALUES (%s)"
+            cursor.execute(query, (company_name,))
+            connection.commit()
+            return True
+        except mysql.connector.Error as err:
+            logger.error(f"Error excluding company: {err}")
+            return False
+        finally:
+            if cursor: cursor.close()
+            if connection: connection.close()
+
     def get_companies_for_connections(self):
-        """Get list of companies where user applied"""
+        """Get list of companies where user applied, excluding those in exclusion list"""
         connection = None
         cursor = None
         try:
             connection = self.get_connection()
             cursor = connection.cursor(dictionary=True)
             
+            # Ensure exclusion table exists (lazy init)
+            self.create_networking_exclusions_table()
+            
             query = """
-                SELECT DISTINCT company, COUNT(*) as application_count
-                FROM applications
-                WHERE status = 'applied'
-                GROUP BY company
-                ORDER BY MAX(applied_date) DESC
+                SELECT DISTINCT a.company, COUNT(*) as application_count
+                FROM applications a
+                LEFT JOIN networking_exclusions ne ON a.company = ne.company_name
+                WHERE a.status = 'applied' AND ne.company_name IS NULL
+                GROUP BY a.company
+                ORDER BY MAX(a.applied_date) DESC
             """
             
             cursor.execute(query)

@@ -13,6 +13,9 @@
       <a href="/results" class="btn btn-outline-success">
         <i class="bi bi-file-earmark-spreadsheet me-2"></i> Importar de Resultados
       </a>
+      <button class="btn btn-outline-secondary" id="toggleCompactView" onclick="toggleCompactView()">
+        <i class="bi bi-list-ul me-2"></i> Vista Compacta
+      </button>
       <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addJobModal">
         <i class="bi bi-plus-lg me-2"></i> Agregar Manualmente
       </button>
@@ -220,6 +223,13 @@
         stageElement.appendChild(card);
       });
     });
+
+    // Apply compact view if saved
+    const isCompact = localStorage.getItem('trackerCompactView') === 'true';
+    if (isCompact) {
+      document.querySelectorAll('.job-card').forEach(card => card.classList.add('compact'));
+      updateToggleButton(true);
+    }
 
     // Setup drag and drop
     setupDragAndDrop();
@@ -437,6 +447,34 @@
             loadAllJobs();
           }
         });
+    }
+  }
+
+  function toggleCompactView() {
+    const cards = document.querySelectorAll('.job-card');
+    const isCompact = localStorage.getItem('trackerCompactView') === 'true';
+    const newState = !isCompact;
+    
+    cards.forEach(card => {
+      if (newState) {
+        card.classList.add('compact');
+      } else {
+        card.classList.remove('compact');
+      }
+    });
+    
+    localStorage.setItem('trackerCompactView', newState);
+    updateToggleButton(newState);
+  }
+
+  function updateToggleButton(isCompact) {
+    const btn = document.getElementById('toggleCompactView');
+    if (isCompact) {
+      btn.classList.add('active', 'bg-secondary', 'text-white');
+      btn.innerHTML = '<i class="bi bi-grid me-2"></i> Vista Normal';
+    } else {
+      btn.classList.remove('active', 'bg-secondary', 'text-white');
+      btn.innerHTML = '<i class="bi bi-list-ul me-2"></i> Vista Compacta';
     }
   }
 </script>

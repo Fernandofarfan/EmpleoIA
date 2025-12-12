@@ -60,7 +60,14 @@
                     <div class="status-box p-4 mb-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <span class="small fw-bold text-uppercase text-muted">Estado Actual</span>
-                            <span id="connection-status" class="badge bg-secondary">Inactivo</span>
+                            <div class="d-flex align-items-center gap-2">
+                                <span id="connection-status" class="badge bg-secondary">Inactivo</span>
+                                <form action="/stop_connection_requests" method="post" class="d-inline" id="stop-form" style="display: none;">
+                                    <button type="submit" class="btn btn-danger btn-sm py-0 px-2" style="font-size: 0.75rem;">
+                                        <i class="bi bi-stop-circle me-1"></i> Detener
+                                    </button>
+                                </form>
+                            </div>
                         </div>
                         <div class="progress mb-2" style="height: 10px;">
                             <div id="connection-progress" class="progress-bar" role="progressbar" style="width: 0%">
@@ -70,16 +77,70 @@
                     </div>
 
                     <form id="connection-form" action="/start_connection_requests" method="post">
-                        <div class="mb-4">
-                            <label for="linkedin_token" class="form-label small fw-bold text-muted">Token LinkedIn
-                                (li_at)</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-key"></i></span>
-                                <input type="password" class="form-control" id="linkedin_token" name="linkedin_token"
-                                    required placeholder="Pega tu cookie li_at aquí">
+                        
+                        <ul class="nav nav-tabs mb-3" id="authTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="creds-tab" data-bs-toggle="tab" data-bs-target="#creds" type="button" role="tab">Credenciales</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="token-tab" data-bs-toggle="tab" data-bs-target="#token" type="button" role="tab">Token (Avanzado)</button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content mb-4" id="authTabsContent">
+                            <div class="tab-pane fade show active" id="creds" role="tabpanel">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted">Email LinkedIn</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                        <input type="email" class="form-control" name="linkedin_email" placeholder="tu@email.com">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted">Contraseña</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                        <input type="password" class="form-control" name="linkedin_password" placeholder="••••••••">
+                                    </div>
+                                </div>
                             </div>
-                            <div class="form-text small mt-2"><i class="bi bi-info-circle me-1"></i> Necesario para
-                                autenticar la sesión.</div>
+                            <div class="tab-pane fade" id="token" role="tabpanel">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-muted">Token LinkedIn (li_at)</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-key"></i></span>
+                                        <input type="password" class="form-control" name="linkedin_token" placeholder="Cookie li_at">
+                                    </div>
+                                    <div class="form-text small mt-2">Úsalo si tienes problemas con la verificación en dos pasos (2FA).</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-bold text-muted">Modo de Búsqueda</label>
+                            <div class="d-flex gap-3 mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="search_mode" id="mode_companies" value="companies" checked onchange="toggleSearchMode()">
+                                    <label class="form-check-label" for="mode_companies">
+                                        Lista de Empresas
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="search_mode" id="mode_general" value="general" onchange="toggleSearchMode()">
+                                    <label class="form-check-label" for="mode_general">
+                                        Búsqueda General (Reclutadores)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="general_search_input" style="display: none;" class="mb-3">
+                                <label class="form-label small fw-bold text-muted">Término de Búsqueda</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" name="search_term" placeholder="Ej: IT Recruiter, Talent Acquisition, Headhunter">
+                                </div>
+                                <div class="form-text small mt-1">Buscará personas con este título en Argentina.</div>
+                            </div>
                         </div>
 
                         <div class="mb-4">
@@ -93,17 +154,24 @@
                             </div>
                         </div>
 
-                        <div class="mb-4">
+                        <div class="mb-4" id="company_list_container">
                             <label class="form-label small fw-bold text-muted mb-3">Seleccionar Empresas</label>
                             {% if empresas %}
                             <div class="border rounded p-3 bg-white" style="max-height: 250px; overflow-y: auto;">
                                 {% for company in empresas %}
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" name="company_selection"
-                                        value="{{ company }}" id="company_{{ loop.index }}" checked>
-                                    <label class="form-check-label ms-2" for="company_{{ loop.index }}">
-                                        {{ company }}
-                                    </label>
+                                <div class="form-check mb-2 d-flex justify-content-between align-items-center group-hover">
+                                    <div>
+                                        <input class="form-check-input" type="checkbox" name="company_selection"
+                                            value="{{ company }}" id="company_{{ loop.index }}" checked>
+                                        <label class="form-check-label ms-2" for="company_{{ loop.index }}">
+                                            {{ company }}
+                                        </label>
+                                    </div>
+                                    <button type="button" class="btn btn-link text-danger p-0 ms-2 opacity-50 hover-opacity-100" 
+                                            onclick="excludeCompany('{{ company }}', this)" title="Eliminar de la lista"
+                                            style="text-decoration: none;">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
                                 {% endfor %}
                             </div>
@@ -153,6 +221,7 @@
         const statusElem = document.getElementById('connection-status');
         const progressElem = document.getElementById('connection-progress');
         const messageElem = document.getElementById('connection-message');
+        const stopForm = document.getElementById('stop-form');
 
         if (!jobData) return;
 
@@ -160,12 +229,20 @@
             'idle': 'Inactivo',
             'running': 'Ejecutando',
             'completed': 'Completado',
-            'failed': 'Falló'
+            'failed': 'Falló',
+            'stopped': 'Detenido'
         };
         const statusText = statusTranslations[jobData.status] || jobData.status;
 
         statusElem.textContent = statusText.charAt(0).toUpperCase() + statusText.slice(1);
         statusElem.className = 'badge';
+
+        // Show/Hide Stop Button
+        if (jobData.status === 'running') {
+            stopForm.style.display = 'inline-block';
+        } else {
+            stopForm.style.display = 'none';
+        }
 
         if (jobData.status === 'running') {
             statusElem.classList.add('bg-primary', 'animate-pulse');
@@ -176,6 +253,9 @@
         } else if (jobData.status === 'failed') {
             statusElem.classList.add('bg-danger');
             progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
+        } else if (jobData.status === 'stopped') {
+            statusElem.classList.add('bg-warning', 'text-dark');
+            progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
         } else {
             statusElem.classList.add('bg-secondary');
             progressElem.classList.remove('progress-bar-striped', 'progress-bar-animated');
@@ -184,6 +264,55 @@
         progressElem.style.width = `${jobData.progress}%`;
         progressElem.setAttribute('aria-valuenow', jobData.progress);
         messageElem.textContent = jobData.message;
+    }
+
+    function toggleSearchMode() {
+        const mode = document.querySelector('input[name="search_mode"]:checked').value;
+        const generalInput = document.getElementById('general_search_input');
+        const companyList = document.getElementById('company_list_container');
+        const submitBtn = document.getElementById('connection-submit-btn');
+
+        if (mode === 'general') {
+            generalInput.style.display = 'block';
+            companyList.style.display = 'none';
+            submitBtn.disabled = false; // Always enable for general search (validation on submit)
+        } else {
+            generalInput.style.display = 'none';
+            companyList.style.display = 'block';
+            // Re-evaluate disabled state based on company list presence
+            const hasCompanies = companyList.querySelectorAll('input[type="checkbox"]').length > 0;
+            submitBtn.disabled = !hasCompanies;
+        }
+    }
+
+    function excludeCompany(companyName, btnElement) {
+        if (!confirm(`¿Estás seguro de que quieres eliminar a ${companyName} de la lista de networking?`)) {
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('company_name', companyName);
+
+        fetch('/exclude_company_from_networking', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove the element from the DOM with a fade out effect
+                const row = btnElement.closest('.form-check');
+                row.style.transition = 'opacity 0.3s ease';
+                row.style.opacity = '0';
+                setTimeout(() => row.remove(), 300);
+            } else {
+                alert('Error al eliminar la empresa: ' + (data.error || 'Error desconocido'));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error de conexión');
+        });
     }
 </script>
 {% endblock %}
