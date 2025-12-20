@@ -311,8 +311,11 @@ INDEED_EMAIL=tu_email_google@gmail.com
 INDEED_PASSWORD=tu_password_google
 
 # LinkedIn Credentials (Opcional)
+# Podés usar email y contraseña:
 LINKEDIN_EMAIL=tu_email@ejemplo.com
 LINKEDIN_PASSWORD=tu_password
+# O el token li_at (más estable):
+LINKEDIN_TOKEN=tu_linkedin_cookie_token
 
 # Bumeran & Computrabajo (Opcional - Para extracción profunda)
 BUMERAN_EMAIL=tu_email@ejemplo.com
